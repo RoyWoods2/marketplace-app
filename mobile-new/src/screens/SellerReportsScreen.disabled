@@ -1,0 +1,246 @@
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+  Dimensions,
+} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { API_ENDPOINTS } from '../config/api';
+import { useAuth } from '../context/AuthContext';
+import Card from '../components/Card';
+
+const SCREEN_WIDTH = Dimensions.get('window').width;
+
+export default function SellerReportsScreen({ navigation }: any) {
+  const [loading, setLoading] = useState(true);
+  const [timeframe, setTimeframe] = useState<'day' | 'week' | 'month'>('week');
+  const [stats, setStats] = useState<any>(null);
+  const { token, user } = useAuth();
+
+  useEffect(() => {
+    fetchStats();
+  }, [timeframe]);
+
+  const fetchStats = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_ENDPOINTS.SELLER_DASHBOARD}?userId=${user?.id}&timeframe=${timeframe}`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setStats(data.stats);
+      }
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const TimeframeButton = ({ value, label }: { value: typeof timeframe; label: string }) => (
+    <TouchableOpacity
+      style={[styles.timeframeButton, timeframe === value && styles.timeframeButtonActive]}
+      onPress={() => setTimeframe(value)}
+    >
+      {timeframe === value ? (
+        <LinearGradient colors={['#34C759', '#30B350']} style={styles.timeframeGradient}>
+          <Text style={styles.timeframeTextActive}>{label}</Text>
+        </LinearGradient>
+      ) : (
+        <Text style={styles.timeframeText}>{label}</Text>
+      )}
+    </TouchableOpacity>
+  );
+
+  const StatCard = ({ title, value, icon, gradient }: any) => (
+    <View style={styles.statCardContainer}>
+      <LinearGradient colors={gradient} style={styles.statCard}>
+        <Text style={styles.statIcon}>{icon}</Text>
+        <Text style={styles.statTitle}>{title}</Text>
+        <Text style={styles.statValue}>{value}</Text>
+      </LinearGradient>
+    </View>
+  );
+
+  return (
+    <View style={styles.container}>
+      <LinearGradient colors={['#34C759', '#30B350']} style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Text style={styles.backButtonText}>← Volver</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>📊 Reportes y Estadísticas</Text>
+      </LinearGradient>
+
+      <View style={styles.timeframeContainer}>
+        <TimeframeButton value="day" label="Hoy" />
+        <TimeframeButton value="week" label="Semana" />
+        <TimeframeButton value="month" label="Mes" />
+      </View>
+
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#34C759" />
+        </View>
+      ) : (
+        <ScrollView style={styles.content}>
+          <View style={styles.statsGrid}>
+            <StatCard
+              title="Ventas"
+              value={stats?.totalSales || 0}
+              icon="📈"
+              gradient={['#34C759', '#30B350']}
+            />
+            <StatCard
+              title="Ingresos"
+              value={`$${stats?.totalRevenue || 0}`}
+              icon="💰"
+              gradient={['#FFD60A', '#FFA500']}
+            />
+            <StatCard
+              title="Productos Vendidos"
+              value={stats?.productsSold || 0}
+              icon="📦"
+              gradient={['#667eea', '#764ba2']}
+            />
+            <StatCard
+              title="Promedio Orden"
+              value={`$${stats?.averageOrder || 0}`}
+              icon="💵"
+              gradient={['#f093fb', '#f5576c']}
+            />
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>📌 Productos Más Vendidos</Text>
+            <Card>
+              <Text style={styles.comingSoon}>Próximamente</Text>
+            </Card>
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>📅 Gráfica de Ventas</Text>
+            <Card>
+              <Text style={styles.comingSoon}>Próximamente</Text>
+            </Card>
+          </View>
+        </ScrollView>
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#0a0a0f',
+  },
+  header: {
+    paddingTop: 60,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+  },
+  backButton: {
+    marginBottom: 12,
+  },
+  backButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#fff',
+    textAlign: 'center',
+  },
+  timeframeContainer: {
+    flexDirection: 'row',
+    padding: 16,
+    gap: 12,
+    backgroundColor: '#0a0a0f',
+  },
+  timeframeButton: {
+    flex: 1,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  timeframeGradient: {
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  timeframeText: {
+    color: '#888',
+    fontSize: 15,
+    fontWeight: '600',
+    paddingVertical: 10,
+    textAlign: 'center',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  timeframeTextActive: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: 'bold',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  content: {
+    flex: 1,
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    padding: 16,
+    gap: 12,
+  },
+  statCardContainer: {
+    width: (SCREEN_WIDTH - 52) / 2,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  statCard: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  statIcon: {
+    fontSize: 32,
+    marginBottom: 8,
+  },
+  statTitle: {
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.9)',
+    marginBottom: 8,
+  },
+  statValue: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  section: {
+    padding: 16,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 12,
+  },
+  comingSoon: {
+    fontSize: 16,
+    color: '#888',
+    textAlign: 'center',
+    padding: 40,
+  },
+});
+

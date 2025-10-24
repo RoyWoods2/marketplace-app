@@ -1,0 +1,368 @@
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Switch,
+  Alert,
+} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useAuth } from '../context/AuthContext';
+import Card from '../components/Card';
+import GradientButton from '../components/GradientButton';
+
+export default function SellerSettingsScreen({ navigation }: any) {
+  const { user } = useAuth();
+  const [notifications, setNotifications] = useState(true);
+  const [emailNotifications, setEmailNotifications] = useState(true);
+  const [orderAlerts, setOrderAlerts] = useState(true);
+  const [stockAlerts, setStockAlerts] = useState(true);
+
+  const handleSaveSettings = () => {
+    Alert.alert('Éxito', 'Configuración guardada correctamente');
+  };
+
+  const SettingRow = ({ title, description, value, onValueChange, icon }: any) => (
+    <View style={styles.settingRow}>
+      <View style={styles.settingInfo}>
+        <Text style={styles.settingIcon}>{icon}</Text>
+        <View style={styles.settingText}>
+          <Text style={styles.settingTitle}>{title}</Text>
+          {description && (
+            <Text style={styles.settingDescription}>{description}</Text>
+          )}
+        </View>
+      </View>
+      <Switch
+        value={value}
+        onValueChange={onValueChange}
+        trackColor={{ false: '#767577', true: '#34C759' }}
+        thumbColor={value ? '#fff' : '#f4f3f4'}
+      />
+    </View>
+  );
+
+  return (
+    <View style={styles.container}>
+      <LinearGradient colors={['#34C759', '#30B350']} style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Text style={styles.backButtonText}>← Volver</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>⚙️ Ajustes</Text>
+      </LinearGradient>
+
+      <ScrollView style={styles.content}>
+        {/* Account Info */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>👤 Información de Cuenta</Text>
+          <Card style={styles.infoCard}>
+            <Text style={styles.infoLabel}>Nombre</Text>
+            <Text style={styles.infoValue}>{user?.firstName} {user?.lastName}</Text>
+            
+            <Text style={styles.infoLabel}>Email</Text>
+            <Text style={styles.infoValue}>{user?.email}</Text>
+            
+            <Text style={styles.infoLabel}>Tipo de Cuenta</Text>
+            <Text style={styles.infoValue}>🏪 Vendedor</Text>
+          </Card>
+        </View>
+
+        {/* Notifications */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>🔔 Notificaciones</Text>
+          <Card style={styles.settingsCard}>
+            <SettingRow
+              icon="📱"
+              title="Notificaciones Push"
+              description="Recibir alertas en tu dispositivo"
+              value={notifications}
+              onValueChange={setNotifications}
+            />
+            <SettingRow
+              icon="📧"
+              title="Notificaciones por Email"
+              description="Recibir alertas por correo"
+              value={emailNotifications}
+              onValueChange={setEmailNotifications}
+            />
+            <SettingRow
+              icon="🛒"
+              title="Alertas de Órdenes"
+              description="Nuevas órdenes y cambios de estado"
+              value={orderAlerts}
+              onValueChange={setOrderAlerts}
+            />
+            <SettingRow
+              icon="⚠️"
+              title="Alertas de Stock"
+              description="Cuando un producto tenga poco stock"
+              value={stockAlerts}
+              onValueChange={setStockAlerts}
+            />
+          </Card>
+        </View>
+
+        {/* Business Settings */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>🏪 Configuración del Negocio</Text>
+          <Card style={styles.settingsCard}>
+            <TouchableOpacity style={styles.settingButton}>
+              <Text style={styles.settingButtonIcon}>📞</Text>
+              <View style={styles.settingButtonText}>
+                <Text style={styles.settingButtonTitle}>Información de Contacto</Text>
+                <Text style={styles.settingButtonSubtitle}>WhatsApp, Instagram, etc.</Text>
+              </View>
+              <Text style={styles.settingButtonArrow}>→</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.settingButton}>
+              <Text style={styles.settingButtonIcon}>🏢</Text>
+              <View style={styles.settingButtonText}>
+                <Text style={styles.settingButtonTitle}>Datos del Negocio</Text>
+                <Text style={styles.settingButtonSubtitle}>Nombre, descripción</Text>
+              </View>
+              <Text style={styles.settingButtonArrow}>→</Text>
+            </TouchableOpacity>
+          </Card>
+        </View>
+
+        {/* App Settings */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>📱 Configuración de la App</Text>
+          <Card style={styles.settingsCard}>
+            <TouchableOpacity style={styles.settingButton}>
+              <Text style={styles.settingButtonIcon}>🌙</Text>
+              <View style={styles.settingButtonText}>
+                <Text style={styles.settingButtonTitle}>Tema</Text>
+                <Text style={styles.settingButtonSubtitle}>Oscuro (actual)</Text>
+              </View>
+              <Text style={styles.settingButtonArrow}>→</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.settingButton}>
+              <Text style={styles.settingButtonIcon}>🌐</Text>
+              <View style={styles.settingButtonText}>
+                <Text style={styles.settingButtonTitle}>Idioma</Text>
+                <Text style={styles.settingButtonSubtitle}>Español</Text>
+              </View>
+              <Text style={styles.settingButtonArrow}>→</Text>
+            </TouchableOpacity>
+          </Card>
+        </View>
+
+        {/* Save Button */}
+        <View style={styles.section}>
+          <GradientButton
+            title="Guardar Configuración"
+            onPress={handleSaveSettings}
+            gradient={['#34C759', '#30B350']}
+          />
+        </View>
+
+        {/* Version */}
+        <View style={styles.footer}>
+          <Text style={styles.versionText}>Versión 2.1.0</Text>
+          <Text style={styles.versionSubtext}>Marketplace App</Text>
+        </View>
+      </ScrollView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#0a0a0f',
+  },
+  header: {
+    paddingTop: 60,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+  },
+  backButton: {
+    marginBottom: 12,
+  },
+  backButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#fff',
+    textAlign: 'center',
+  },
+  timeframeContainer: {
+    flexDirection: 'row',
+    padding: 16,
+    gap: 12,
+  },
+  timeframeButton: {
+    flex: 1,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  timeframeGradient: {
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  timeframeText: {
+    color: '#888',
+    fontSize: 14,
+    fontWeight: '600',
+    paddingVertical: 10,
+    textAlign: 'center',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 12,
+  },
+  timeframeTextActive: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  content: {
+    flex: 1,
+  },
+  section: {
+    padding: 16,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 12,
+  },
+  infoCard: {
+    padding: 16,
+  },
+  infoLabel: {
+    fontSize: 13,
+    color: '#888',
+    marginBottom: 4,
+    marginTop: 12,
+  },
+  infoValue: {
+    fontSize: 16,
+    color: '#fff',
+    fontWeight: '600',
+  },
+  settingsCard: {
+    padding: 8,
+  },
+  settingRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.05)',
+  },
+  settingInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  settingIcon: {
+    fontSize: 24,
+    marginRight: 12,
+  },
+  settingText: {
+    flex: 1,
+  },
+  settingTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
+    marginBottom: 2,
+  },
+  settingDescription: {
+    fontSize: 13,
+    color: '#888',
+  },
+  settingButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.05)',
+  },
+  settingButtonIcon: {
+    fontSize: 24,
+    marginRight: 12,
+  },
+  settingButtonText: {
+    flex: 1,
+  },
+  settingButtonTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
+    marginBottom: 2,
+  },
+  settingButtonSubtitle: {
+    fontSize: 13,
+    color: '#888',
+  },
+  settingButtonArrow: {
+    fontSize: 20,
+    color: '#888',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    padding: 16,
+    gap: 12,
+  },
+  statCardContainer: {
+    width: (width - 52) / 2,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  statCard: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  statIcon: {
+    fontSize: 32,
+    marginBottom: 8,
+  },
+  statTitle: {
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.9)',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  statValue: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  comingSoon: {
+    fontSize: 16,
+    color: '#888',
+    textAlign: 'center',
+    padding: 40,
+  },
+  footer: {
+    alignItems: 'center',
+    padding: 24,
+  },
+  versionText: {
+    fontSize: 14,
+    color: '#888',
+  },
+  versionSubtext: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 4,
+  },
+});
+
