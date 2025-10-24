@@ -1,0 +1,48 @@
+ARCHIVOS QUE DEBEN EXISTIR EN mobile-new/src/screens/:
+
+✅ MANTENER (Mejorados):
+SellerDashboardScreenMejor.tsx
+SellerProductsScreenMejorado.tsx
+SellerOrdersScreenMejorado.tsx
+CreateScreenMejorado.tsx
+OrderDetailScreen.tsx
+SellerReportsScreen.tsx
+SellerSettingsScreen.tsx
+
+✅ MANTENER (Originales - No modificados):
+OnboardingScreen.tsx
+LoginScreen.tsx
+RegisterScreen.tsx
+HomeScreen.tsx
+ProfileScreen.tsx
+ProductDetailScreen.tsx
+SearchScreen.tsx
+NotificationsScreen.tsx
+QRScannerScreen.tsx
+AdminDashboardScreen.tsx
+AdminQRScannerScreen.tsx
+BuyerDashboardScreen.tsx
+BuyerOrdersScreen.tsx
+CreateOrderScreen.tsx
+ClientOrdersEnhancedScreen.tsx
+
+❌ ELIMINAR (si existen):
+CreateScreen.tsx
+SellerOrdersScreen.tsx
+SellerOrdersEnhancedScreen.tsx
+SellerDashboardScreen.tsx
+SellerProductsScreen.tsx
+
+---
+
+EJECUTA ESTO EN POWERSHELL:
+
+cd C:\Users\Roy\Documents\Proyectos\marketplace\mobile-new\src\screens
+
+Get-ChildItem Seller*.tsx | Select-Object Name
+
+Esto te mostrará TODOS los archivos Seller*.
+Compárteme la lista que te da.
+
+
+
