@@ -14,6 +14,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { API_ENDPOINTS } from '../config/api';
 import { useAuth } from '../context/AuthContext';
+import { formatCurrencyShort } from '../utils/currency';
 import Card from '../components/Card';
 import GradientButton from '../components/GradientButton';
 
@@ -157,8 +158,8 @@ export default function OrderDetailScreen({ route, navigation }: any) {
             />
             <View style={styles.productDetails}>
               <Text style={styles.productTitle}>{order.product.title}</Text>
-              <Text style={styles.productPrice}>${order.product.price} × {order.quantity}</Text>
-              <Text style={styles.productTotal}>Total: ${order.total}</Text>
+              <Text style={styles.productPrice}>{formatCurrencyShort(order.product.price)} × {order.quantity}</Text>
+              <Text style={styles.productTotal}>Total: {formatCurrencyShort(order.total)}</Text>
             </View>
           </View>
         </View>

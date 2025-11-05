@@ -1,5 +1,19 @@
 // API Configuration
-export const API_BASE_URL = 'http://192.168.1.120:3001';
+// Para desarrollo local, usa: http://TU_IP_LOCAL:3001
+// Para producción, usa: https://tu-url.railway.app
+// Cambia esta URL cuando deployes a producción
+
+// Detectar si estamos en desarrollo o producción
+const isDevelopment = __DEV__;
+
+// URL por defecto (desarrollo local)
+const DEVELOPMENT_URL = 'http://192.168.1.120:3001';
+
+// URL de producción (actualizar después de deployar)
+const PRODUCTION_URL = 'https://tu-url.railway.app'; // ⚠️ ACTUALIZAR ESTA URL
+
+// Usar URL según el entorno
+export const API_BASE_URL = isDevelopment ? DEVELOPMENT_URL : PRODUCTION_URL;
 export const API_URL = `${API_BASE_URL}/api`;
 
 export const API_ENDPOINTS = {

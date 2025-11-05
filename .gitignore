@@ -143,6 +143,10 @@ uploads/
 !README.md
 !SETUP.md
 !INSTALLATION.md
+!GUIA_DEPLOY_RAPIDO.md
+!DEPLOY_RAPIDO.md
+!DEPLOY_CHECKLIST.md
+!PLAN_MODERNIZACION.md
 
 # Scripts de desarrollo local
 *.bat

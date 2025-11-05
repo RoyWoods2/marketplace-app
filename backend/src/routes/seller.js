@@ -14,16 +14,26 @@ router.get('/dashboard', async (req, res) => {
       return res.status(400).json({ error: 'User ID is required' });
     }
 
-    // Get seller stats
-    let sellerStats = await prisma.sellerStats.findUnique({
-      where: { userId }
+    // Verificar que el usuario existe
+    const user = await prisma.user.findUnique({
+      where: { id: userId }
     });
 
-    if (!sellerStats) {
-      sellerStats = await prisma.sellerStats.create({
-        data: { userId }
-      });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
     }
+
+    // Usar upsert para crear o obtener seller stats de forma segura
+    const sellerStats = await prisma.sellerStats.upsert({
+      where: { userId },
+      update: {}, // No actualizar si ya existe
+      create: { 
+        userId,
+        totalSales: 0,
+        totalRevenue: 0,
+        productsSold: 0
+      }
+    });
 
     // Get today's stats
     const today = new Date();

@@ -11,6 +11,7 @@ import {
   Linking,
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
+import { API_ENDPOINTS } from '../config/api';
 
 interface Order {
   id: string;
@@ -54,7 +55,7 @@ export default function BuyerOrdersScreen() {
     dateRange: 'ALL',
     search: '',
   });
-  const { token } = useAuth();
+  const { token, user } = useAuth();
 
   const statusOptions = [
     { value: 'ALL', label: 'Todas' },
@@ -83,21 +84,31 @@ export default function BuyerOrdersScreen() {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:3001/api/buyer/orders', {
+      
+      if (!user) {
+        Alert.alert('Error', 'Usuario no autenticado');
+        setLoading(false);
+        return;
+      }
+
+      const response = await fetch(`${API_ENDPOINTS.BUYER_ORDERS}?userId=${user.id}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
       });
 
       if (response.ok) {
         const data = await response.json();
-        setOrders(data.orders);
+        setOrders(data.orders || []);
       } else {
-        Alert.alert('Error', 'No se pudieron cargar las órdenes');
+        const errorData = await response.json().catch(() => ({ error: 'Error desconocido' }));
+        console.error('Error response:', errorData);
+        Alert.alert('Error', errorData.error || 'No se pudieron cargar las órdenes');
       }
     } catch (error) {
       console.error('Error fetching orders:', error);
-      Alert.alert('Error', 'Error al cargar las órdenes');
+      Alert.alert('Error', 'Error al cargar las órdenes. Verifica tu conexión a internet.');
     } finally {
       setLoading(false);
     }

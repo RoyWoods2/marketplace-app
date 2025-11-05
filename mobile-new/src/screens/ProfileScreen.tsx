@@ -253,6 +253,7 @@ export default function ProfileScreen({ navigation }: any) {
         <Text style={styles.sectionTitle}>Configuración</Text>
         <View style={styles.menuContainer}>
           {renderMenuButton('Notificaciones', '🔔', handleNotifications)}
+          {renderMenuButton('Prueba Notificaciones', '🧪', () => navigation.navigate('TestNotifications'))}
           {renderMenuButton('Configuración', '⚙️', handleSettings)}
           {renderMenuButton('Ayuda y Soporte', '❓', () => Alert.alert('Ayuda', 'Soporte próximamente'))}
           {renderMenuButton('Acerca de', 'ℹ️', () => Alert.alert('Acerca de', 'Marketplace v1.0'))}

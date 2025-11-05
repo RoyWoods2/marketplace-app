@@ -25,6 +25,7 @@ model User {
   facebook    String?  // Nueva red social
   companyName String?  // Nombre de la empresa/emprendimiento
   userType    UserType @default(CLIENT) // CLIENT, SELLER, ADMIN
+  pushToken   String?  // Token para notificaciones push
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -37,6 +38,7 @@ model User {
   notifications Notification[]
   settings      UserSettings?
   sellerStats   SellerStats?
+  activityLogs  ActivityLog[]
 
   @@map("users")
 }
@@ -86,18 +88,20 @@ model Reel {
 }
 
 model Order {
-  id            String      @id @default(cuid())
-  status        OrderStatus @default(PENDING)
+  id            String       @id @default(cuid())
+  status        OrderStatus  @default(PENDING)
   total         Float
-  quantity      Int         @default(1)
-  qrCode        String      @unique // Código QR único para tracking
-  qrSecretToken String      @unique // Token secreto para validación QR
-  paymentMethod String?     // Método de pago usado (efectivo, transferencia, etc.)
-  notes         String?     // Notas del cliente o vendedor
-  pickupCode    String?     // Código para retiro (opcional)
-  branchId      String?     // Sucursal donde se entregará el producto
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  quantity      Int          @default(1)
+  qrCode        String       @unique // Código QR único para tracking
+  qrSecretToken String       @unique // Token secreto para validación QR
+  paymentMethod String?      // Método de pago usado (efectivo, transferencia, etc.)
+  deliveryType  DeliveryType @default(PICKUP) // PICKUP o DELIVERY
+  deliveryAddress String?    // Dirección de entrega (si es delivery)
+  notes         String?      // Notas del cliente o vendedor
+  pickupCode    String?      // Código para retiro (opcional)
+  branchId      String?      // Sucursal donde se entregará el producto
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
 
   // Relations
   userId    String
@@ -201,4 +205,31 @@ enum UserType {
   CLIENT    // Cliente que compra
   SELLER    // Vendedor que vende productos
   ADMIN     // Administrador de sucursal
+}
+
+enum DeliveryType {
+  PICKUP    // Retiro en sucursal
+  DELIVERY  // Entrega a domicilio
+}
+
+// Modelo para registrar todas las actividades del sistema
+model ActivityLog {
+  id          String   @id @default(cuid())
+  userId      String?  // Usuario que realizó la acción (null si es del sistema)
+  action      String   // Tipo de acción: 'ORDER_CREATED', 'ORDER_UPDATED', 'PRODUCT_CREATED', etc.
+  entityType  String   // Tipo de entidad: 'Order', 'Product', 'User', etc.
+  entityId    String   // ID de la entidad afectada
+  description String   // Descripción de la acción
+  metadata    Json?    // Datos adicionales en formato JSON
+  ipAddress   String?  // IP desde donde se realizó la acción
+  userAgent   String?  // User agent del cliente
+  createdAt   DateTime @default(now())
+
+  // Relations
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("activity_logs")
 }

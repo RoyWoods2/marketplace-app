@@ -25,8 +25,25 @@ import { API_ENDPOINTS } from '../config/api';
 import { useAuth } from '../context/AuthContext';
 import Card from '../components/Card';
 import GradientButton from '../components/GradientButton';
+import { formatCurrencyShort } from '../utils/currency';
+import { useNavigation } from '@react-navigation/native';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
+
+const CATEGORIES = [
+  'Tecnología',
+  'Moda',
+  'Hogar',
+  'Deportes',
+  'Belleza',
+  'Libros',
+  'Juguetes',
+  'Artesanías',
+  'Comida',
+  'Otros',
+];
+
+type SortType = 'name' | 'price_low' | 'price_high' | 'stock_low' | 'stock_high' | 'date_new' | 'date_old';
 
 interface Product {
   id: string;
@@ -38,17 +55,27 @@ interface Product {
   images: string[];
   isActive: boolean;
   createdAt: string;
+  salesCount?: number;
+  revenue?: number;
 }
 
 type FilterType = 'all' | 'active' | 'inactive' | 'lowStock';
 
 export default function SellerProductsScreen() {
+  const navigation = useNavigation();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [previewProduct, setPreviewProduct] = useState<Product | null>(null);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [filter, setFilter] = useState<FilterType>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<SortType>('date_new');
+  const [showSortModal, setShowSortModal] = useState(false);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [showStatsModal, setShowStatsModal] = useState(false);
   const { token, user } = useAuth();
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -86,7 +113,42 @@ export default function SellerProductsScreen() {
 
       if (response.ok) {
         const data = await response.json();
-        setProducts(data.products || []);
+        const productsData = data.products || [];
+
+        // Fetch orders to calculate sales stats per product
+        const ordersResponse = await fetch(`${API_ENDPOINTS.SELLER_ORDERS}?userId=${user.id}&limit=1000`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+
+        if (ordersResponse.ok) {
+          const ordersData = await ordersResponse.json();
+          const orders = ordersData.orders || [];
+
+          // Calculate sales count and revenue per product
+          const productStats: { [key: string]: { salesCount: number; revenue: number } } = {};
+          
+          orders.forEach((order: any) => {
+            if (order.status === 'DELIVERED' && order.product) {
+              const productId = order.product.id;
+              if (!productStats[productId]) {
+                productStats[productId] = { salesCount: 0, revenue: 0 };
+              }
+              productStats[productId].salesCount += order.quantity || 1;
+              productStats[productId].revenue += order.total || 0;
+            }
+          });
+
+          // Add stats to products
+          const productsWithStats = productsData.map((product: Product) => ({
+            ...product,
+            salesCount: productStats[product.id]?.salesCount || 0,
+            revenue: productStats[product.id]?.revenue || 0,
+          }));
+
+          setProducts(productsWithStats);
+        } else {
+          setProducts(productsData);
+        }
       } else {
         Alert.alert('Error', 'No se pudieron cargar los productos');
       }
@@ -134,22 +196,72 @@ export default function SellerProductsScreen() {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsMultipleSelection: false,
+        allowsMultipleSelection: true,
         quality: 0.8,
-        allowsEditing: true,
-        aspect: [1, 1],
+        allowsEditing: false,
       });
 
-      if (!result.canceled && result.assets[0]) {
+      if (!result.canceled && result.assets.length > 0) {
+        const newImages = result.assets.map(asset => asset.uri);
         setNewProduct(prev => ({
           ...prev,
-          images: [...prev.images, result.assets[0].uri]
+          images: [...prev.images, ...newImages]
         }));
       }
     } catch (error) {
       console.error('Error picking image:', error);
       Alert.alert('Error', 'No se pudo seleccionar la imagen');
     }
+  };
+
+  const moveImage = (fromIndex: number, toIndex: number) => {
+    setNewProduct(prev => {
+      const newImages = [...prev.images];
+      const [moved] = newImages.splice(fromIndex, 1);
+      newImages.splice(toIndex, 0, moved);
+      return { ...prev, images: newImages };
+    });
+  };
+
+  const handleDuplicateProduct = (product: Product) => {
+    setNewProduct({
+      title: `${product.title} (Copia)`,
+      description: product.description,
+      price: product.price.toString(),
+      stock: product.stock.toString(),
+      category: product.category,
+      images: [...product.images],
+    });
+    setEditingProduct(null);
+    setShowAddModal(true);
+  };
+
+  const handlePreviewProduct = (product: Product) => {
+    setPreviewProduct(product);
+    setShowPreviewModal(true);
+  };
+
+  const calculateStats = () => {
+    const totalInventoryValue = products.reduce((sum, p) => sum + (p.price * p.stock), 0);
+    const activeProducts = products.filter(p => p.isActive).length;
+    const totalProducts = products.length;
+    const lowStockProducts = products.filter(p => p.stock <= 5).length;
+    const noSalesProducts = products.filter(p => !p.salesCount || p.salesCount === 0).length;
+    
+    // Top 3 productos más vendidos
+    const topSelling = [...products]
+      .filter(p => p.salesCount && p.salesCount > 0)
+      .sort((a, b) => (b.salesCount || 0) - (a.salesCount || 0))
+      .slice(0, 3);
+
+    return {
+      totalInventoryValue,
+      activeProducts,
+      totalProducts,
+      lowStockProducts,
+      noSalesProducts,
+      topSelling,
+    };
   };
 
   const removeImage = (index: number) => {
@@ -233,17 +345,57 @@ export default function SellerProductsScreen() {
     }
   };
 
-  const getFilteredProducts = () => {
+  const getFilteredAndSortedProducts = () => {
+    let filtered = products;
+
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(p => 
+        p.title.toLowerCase().includes(query) ||
+        p.description?.toLowerCase().includes(query) ||
+        p.category?.toLowerCase().includes(query)
+      );
+    }
+
+    // Apply status filter
     switch (filter) {
       case 'active':
-        return products.filter(p => p.isActive);
+        filtered = filtered.filter(p => p.isActive);
+        break;
       case 'inactive':
-        return products.filter(p => !p.isActive);
+        filtered = filtered.filter(p => !p.isActive);
+        break;
       case 'lowStock':
-        return products.filter(p => p.stock <= 5);
+        filtered = filtered.filter(p => p.stock <= 5);
+        break;
       default:
-        return products;
+        break;
     }
+
+    // Apply sorting
+    const sorted = [...filtered].sort((a, b) => {
+      switch (sortBy) {
+        case 'name':
+          return a.title.localeCompare(b.title);
+        case 'price_low':
+          return a.price - b.price;
+        case 'price_high':
+          return b.price - a.price;
+        case 'stock_low':
+          return a.stock - b.stock;
+        case 'stock_high':
+          return b.stock - a.stock;
+        case 'date_new':
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        case 'date_old':
+          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        default:
+          return 0;
+      }
+    });
+
+    return sorted;
   };
 
   const FilterButton = ({ type, label, icon, count }: { type: FilterType; label: string; icon: string; count?: number }) => {
@@ -310,7 +462,7 @@ export default function SellerProductsScreen() {
                 {item.description || 'Sin descripción'}
               </Text>
               <View style={styles.productMeta}>
-                <Text style={styles.productPrice}>${item.price}</Text>
+                <Text style={styles.productPrice}>{formatCurrencyShort(item.price)}</Text>
                 <View style={[
                   styles.stockBadge,
                   item.stock <= 5 && styles.lowStockBadge
@@ -320,19 +472,42 @@ export default function SellerProductsScreen() {
                   </Text>
                 </View>
               </View>
+              {/* Product Stats */}
+              {(item.salesCount || item.revenue) && (
+                <View style={styles.productStats}>
+                  {item.salesCount && item.salesCount > 0 && (
+                    <Text style={styles.productStatText}>📈 {item.salesCount} ventas</Text>
+                  )}
+                  {item.revenue && item.revenue > 0 && (
+                    <Text style={styles.productStatText}>💰 {formatCurrencyShort(item.revenue)}</Text>
+                  )}
+                </View>
+              )}
               <View style={styles.productActions}>
+                <TouchableOpacity
+                  style={[styles.actionButton, styles.actionButtonSmall]}
+                  onPress={() => handlePreviewProduct(item)}
+                >
+                  <Text style={styles.actionButtonText}>👁️</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.actionButton, styles.actionButtonSmall]}
+                  onPress={() => handleDuplicateProduct(item)}
+                >
+                  <Text style={styles.actionButtonText}>📋</Text>
+                </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.actionButton}
                   onPress={() => handleEditProduct(item)}
                 >
-                  <Text style={styles.actionButtonText}>✏️ Editar</Text>
+                  <Text style={styles.actionButtonText}>✏️</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.actionButton, styles.actionButtonSecondary]}
                   onPress={() => handleToggleActive(item)}
                 >
                   <Text style={styles.actionButtonText}>
-                    {item.isActive ? '⏸️ Pausar' : '▶️ Activar'}
+                    {item.isActive ? '⏸️' : '▶️'}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -352,10 +527,25 @@ export default function SellerProductsScreen() {
     );
   }
 
-  const filteredProducts = getFilteredProducts();
+  const filteredProducts = getFilteredAndSortedProducts();
+  const stats = calculateStats();
   const lowStockCount = products.filter(p => p.stock <= 5).length;
   const activeCount = products.filter(p => p.isActive).length;
   const inactiveCount = products.filter(p => !p.isActive).length;
+
+  const getSortLabel = () => {
+    const labels: { [key: string]: string } = {
+      name: 'Nombre A-Z',
+      price_low: 'Precio: Menor',
+      price_high: 'Precio: Mayor',
+      stock_low: 'Stock: Menor',
+      stock_high: 'Stock: Mayor',
+      date_new: 'Más Recientes',
+      date_old: 'Más Antiguos',
+    };
+    return labels[sortBy] || 'Ordenar';
+  };
+
 
   return (
     <View style={styles.container}>
@@ -365,23 +555,57 @@ export default function SellerProductsScreen() {
         style={styles.header}
       >
         <View style={styles.headerContent}>
-          <View>
+          <View style={styles.headerLeft}>
             <Text style={styles.headerTitle}>📦 Mis Productos</Text>
             <Text style={styles.headerSubtitle}>{products.length} producto{products.length !== 1 ? 's' : ''} total{products.length !== 1 ? 'es' : ''}</Text>
           </View>
-          <TouchableOpacity
-            style={styles.addButton}
-            onPress={handleAddProduct}
-          >
-            <LinearGradient
-              colors={['rgba(255,255,255,0.3)', 'rgba(255,255,255,0.2)']}
-              style={styles.addButtonGradient}
+          <View style={styles.headerActions}>
+            <TouchableOpacity
+              style={styles.headerActionButton}
+              onPress={() => setShowStatsModal(true)}
             >
-              <Text style={styles.addButtonText}>+ Agregar</Text>
-            </LinearGradient>
-          </TouchableOpacity>
+              <Text style={styles.headerActionIcon}>📊</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.addButton}
+              onPress={handleAddProduct}
+            >
+              <LinearGradient
+                colors={['rgba(255,255,255,0.3)', 'rgba(255,255,255,0.2)']}
+                style={styles.addButtonGradient}
+              >
+                <Text style={styles.addButtonText}>+ Agregar</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
         </View>
       </LinearGradient>
+
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <View style={styles.searchInputWrapper}>
+          <Text style={styles.searchIcon}>🔍</Text>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Buscar productos..."
+            placeholderTextColor="#888"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <Text style={styles.clearIcon}>✕</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+        <TouchableOpacity
+          style={styles.sortButton}
+          onPress={() => setShowSortModal(true)}
+        >
+          <Text style={styles.sortButtonIcon}>🔀</Text>
+          <Text style={styles.sortButtonText}>{getSortLabel()}</Text>
+        </TouchableOpacity>
+      </View>
 
       {/* Filters */}
       <View style={styles.filtersContainer}>
@@ -506,17 +730,20 @@ export default function SellerProductsScreen() {
 
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>Categoría</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Ej: Ropa, Electrónica, Comida..."
-                  placeholderTextColor="#666"
-                  value={newProduct.category}
-                  onChangeText={(text) => setNewProduct({ ...newProduct, category: text })}
-                />
+                <TouchableOpacity
+                  style={styles.categorySelector}
+                  onPress={() => setShowCategoryModal(true)}
+                >
+                  <Text style={newProduct.category ? styles.categorySelectorText : styles.categorySelectorPlaceholder}>
+                    {newProduct.category || 'Seleccionar categoría'}
+                  </Text>
+                  <Text style={styles.categorySelectorArrow}>▼</Text>
+                </TouchableOpacity>
               </View>
 
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>📷 Imágenes del producto *</Text>
+                <Text style={styles.inputHint}>Puedes seleccionar múltiples imágenes. Arrastra para reordenar.</Text>
                 <TouchableOpacity
                   style={styles.imagePickerButton}
                   onPress={pickImages}
@@ -535,12 +762,31 @@ export default function SellerProductsScreen() {
                     {newProduct.images.map((image, index) => (
                       <View key={index} style={styles.imagePreviewItem}>
                         <Image source={{ uri: image }} style={styles.imagePreview} />
-                        <TouchableOpacity
-                          style={styles.removeImageButton}
-                          onPress={() => removeImage(index)}
-                        >
-                          <Text style={styles.removeImageText}>✕</Text>
-                        </TouchableOpacity>
+                        <View style={styles.imagePreviewActions}>
+                          {index > 0 && (
+                            <TouchableOpacity
+                              style={styles.imageActionButton}
+                              onPress={() => moveImage(index, index - 1)}
+                            >
+                              <Text style={styles.imageActionText}>⬆️</Text>
+                            </TouchableOpacity>
+                          )}
+                          {index < newProduct.images.length - 1 && (
+                            <TouchableOpacity
+                              style={styles.imageActionButton}
+                              onPress={() => moveImage(index, index + 1)}
+                            >
+                              <Text style={styles.imageActionText}>⬇️</Text>
+                            </TouchableOpacity>
+                          )}
+                          <TouchableOpacity
+                            style={styles.removeImageButton}
+                            onPress={() => removeImage(index)}
+                          >
+                            <Text style={styles.removeImageText}>✕</Text>
+                          </TouchableOpacity>
+                        </View>
+                        <Text style={styles.imageIndexText}>{index + 1}</Text>
                       </View>
                     ))}
                   </View>
@@ -575,6 +821,212 @@ export default function SellerProductsScreen() {
           </TouchableWithoutFeedback>
         </KeyboardAvoidingView>
       </Modal>
+
+      {/* Stats Modal */}
+      <Modal
+        visible={showStatsModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowStatsModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <LinearGradient
+              colors={['#FFD60A', '#FFA500']}
+              style={styles.modalHeader}
+            >
+              <Text style={styles.modalTitle}>📊 Estadísticas</Text>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => setShowStatsModal(false)}
+              >
+                <Text style={styles.closeButtonText}>✕</Text>
+              </TouchableOpacity>
+            </LinearGradient>
+
+            <ScrollView style={styles.modalBody}>
+              <Card style={styles.statCard}>
+                <Text style={styles.statCardTitle}>💰 Valor del Inventario</Text>
+                <Text style={styles.statCardValue}>{formatCurrencyShort(stats.totalInventoryValue)}</Text>
+                <Text style={styles.statCardSubtext}>Total de productos × precio</Text>
+              </Card>
+
+              <Card style={styles.statCard}>
+                <Text style={styles.statCardTitle}>📦 Resumen de Productos</Text>
+                <View style={styles.statRow}>
+                  <Text style={styles.statLabel}>Total:</Text>
+                  <Text style={styles.statValue}>{stats.totalProducts}</Text>
+                </View>
+                <View style={styles.statRow}>
+                  <Text style={styles.statLabel}>Activos:</Text>
+                  <Text style={[styles.statValue, { color: '#34C759' }]}>{stats.activeProducts}</Text>
+                </View>
+                <View style={styles.statRow}>
+                  <Text style={styles.statLabel}>Stock Bajo:</Text>
+                  <Text style={[styles.statValue, { color: '#FF9800' }]}>{stats.lowStockProducts}</Text>
+                </View>
+                <View style={styles.statRow}>
+                  <Text style={styles.statLabel}>Sin Ventas:</Text>
+                  <Text style={[styles.statValue, { color: '#FF3B30' }]}>{stats.noSalesProducts}</Text>
+                </View>
+              </Card>
+
+              {stats.topSelling.length > 0 && (
+                <Card style={styles.statCard}>
+                  <Text style={styles.statCardTitle}>🏆 Productos Más Vendidos</Text>
+                  {stats.topSelling.map((product, index) => (
+                    <View key={product.id} style={styles.topProductItem}>
+                      <Text style={styles.topProductRank}>#{index + 1}</Text>
+                      <View style={styles.topProductInfo}>
+                        <Text style={styles.topProductName}>{product.title}</Text>
+                        <Text style={styles.topProductSales}>{product.salesCount} ventas</Text>
+                      </View>
+                    </View>
+                  ))}
+                </Card>
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Sort Modal */}
+      <Modal
+        visible={showSortModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowSortModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <LinearGradient
+              colors={['#667eea', '#764ba2']}
+              style={styles.modalHeader}
+            >
+              <Text style={styles.modalTitle}>🔀 Ordenar Por</Text>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => setShowSortModal(false)}
+              >
+                <Text style={styles.closeButtonText}>✕</Text>
+              </TouchableOpacity>
+            </LinearGradient>
+
+            <View style={styles.modalBody}>
+              {(['name', 'price_low', 'price_high', 'stock_low', 'stock_high', 'date_new', 'date_old'] as SortType[]).map((sort) => (
+                <TouchableOpacity
+                  key={sort}
+                  style={[styles.sortOption, sortBy === sort && styles.sortOptionActive]}
+                  onPress={() => {
+                    setSortBy(sort);
+                    setShowSortModal(false);
+                  }}
+                >
+                  <Text style={[styles.sortOptionText, sortBy === sort && styles.sortOptionTextActive]}>
+                    {sort === 'name' ? 'Nombre A-Z' :
+                     sort === 'price_low' ? 'Precio: Menor a Mayor' :
+                     sort === 'price_high' ? 'Precio: Mayor a Menor' :
+                     sort === 'stock_low' ? 'Stock: Menor a Mayor' :
+                     sort === 'stock_high' ? 'Stock: Mayor a Menor' :
+                     sort === 'date_new' ? 'Más Recientes' :
+                     'Más Antiguos'}
+                  </Text>
+                  {sortBy === sort && <Text style={styles.sortOptionCheck}>✓</Text>}
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Category Modal */}
+      <Modal
+        visible={showCategoryModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowCategoryModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <LinearGradient
+              colors={['#34C759', '#30B350']}
+              style={styles.modalHeader}
+            >
+              <Text style={styles.modalTitle}>🏷️ Seleccionar Categoría</Text>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => setShowCategoryModal(false)}
+              >
+                <Text style={styles.closeButtonText}>✕</Text>
+              </TouchableOpacity>
+            </LinearGradient>
+
+            <View style={styles.modalBody}>
+              {CATEGORIES.map((category) => (
+                <TouchableOpacity
+                  key={category}
+                  style={[styles.categoryOption, newProduct.category === category && styles.categoryOptionActive]}
+                  onPress={() => {
+                    setNewProduct({ ...newProduct, category });
+                    setShowCategoryModal(false);
+                  }}
+                >
+                  <Text style={[styles.categoryOptionText, newProduct.category === category && styles.categoryOptionTextActive]}>
+                    {category}
+                  </Text>
+                  {newProduct.category === category && <Text style={styles.categoryOptionCheck}>✓</Text>}
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Preview Modal */}
+      <Modal
+        visible={showPreviewModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowPreviewModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <LinearGradient
+              colors={['#34C759', '#30B350']}
+              style={styles.modalHeader}
+            >
+              <Text style={styles.modalTitle}>👁️ Vista Previa</Text>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => setShowPreviewModal(false)}
+              >
+                <Text style={styles.closeButtonText}>✕</Text>
+              </TouchableOpacity>
+            </LinearGradient>
+
+            {previewProduct && (
+              <ScrollView style={styles.modalBody}>
+                <Image
+                  source={{ uri: previewProduct.images[0] || 'https://via.placeholder.com/400' }}
+                  style={styles.previewImage}
+                />
+                <View style={styles.previewContent}>
+                  <Text style={styles.previewTitle}>{previewProduct.title}</Text>
+                  <Text style={styles.previewPrice}>{formatCurrencyShort(previewProduct.price)}</Text>
+                  <Text style={styles.previewDescription}>{previewProduct.description || 'Sin descripción'}</Text>
+                  <View style={styles.previewMeta}>
+                    <Text style={styles.previewMetaText}>📦 Stock: {previewProduct.stock}</Text>
+                    <Text style={styles.previewMetaText}>🏷️ {previewProduct.category}</Text>
+                    <Text style={styles.previewMetaText}>
+                      {previewProduct.isActive ? '✅ Activo' : '⏸️ Pausado'}
+                    </Text>
+                  </View>
+                </View>
+              </ScrollView>
+            )}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -604,16 +1056,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    width: '100%',
+    paddingRight: 0,
   },
   headerTitle: {
     fontSize: 28,
     fontWeight: 'bold',
     color: '#fff',
     marginBottom: 4,
+    marginRight: 8,
   },
   headerSubtitle: {
     fontSize: 14,
     color: 'rgba(255,255,255,0.9)',
+    marginRight: 8,
   },
   addButton: {
     borderRadius: 12,
@@ -955,6 +1411,304 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     fontWeight: 'bold',
+  },
+  imagePreviewActions: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    flexDirection: 'row',
+    gap: 4,
+  },
+  imageActionButton: {
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    borderRadius: 8,
+    width: 28,
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  imageActionText: {
+    fontSize: 12,
+  },
+  imageIndexText: {
+    position: 'absolute',
+    bottom: 4,
+    left: 4,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: 'bold',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  headerLeft: {
+    flex: 1,
+    minWidth: 0,
+    marginRight: 12,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginLeft: 8,
+  },
+  headerActionButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerActionIcon: {
+    fontSize: 20,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    padding: 12,
+    backgroundColor: '#0a0a0f',
+    gap: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  searchInputWrapper: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    height: 44,
+  },
+  searchIcon: {
+    fontSize: 18,
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    color: '#fff',
+    fontSize: 15,
+  },
+  clearIcon: {
+    color: '#888',
+    fontSize: 18,
+    padding: 4,
+  },
+  sortButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(102, 126, 234, 0.2)',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(102, 126, 234, 0.3)',
+  },
+  sortButtonIcon: {
+    fontSize: 16,
+    marginRight: 6,
+  },
+  sortButtonText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  productStats: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  productStatText: {
+    fontSize: 12,
+    color: '#888',
+  },
+  actionButtonSmall: {
+    flex: 0,
+    paddingHorizontal: 8,
+    minWidth: 40,
+  },
+  categorySelector: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 8,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  categorySelectorText: {
+    color: '#fff',
+    fontSize: 15,
+  },
+  categorySelectorPlaceholder: {
+    color: '#666',
+    fontSize: 15,
+  },
+  categorySelectorArrow: {
+    color: '#888',
+    fontSize: 14,
+  },
+  inputHint: {
+    fontSize: 12,
+    color: '#888',
+    marginBottom: 8,
+    fontStyle: 'italic',
+  },
+  statCard: {
+    marginBottom: 16,
+    padding: 20,
+  },
+  statCardTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 12,
+  },
+  statCardValue: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#FFD60A',
+    marginBottom: 4,
+  },
+  statCardSubtext: {
+    fontSize: 12,
+    color: '#888',
+  },
+  statRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  statLabel: {
+    fontSize: 14,
+    color: '#888',
+  },
+  statValue: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  topProductItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  topProductRank: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#FFD60A',
+    width: 40,
+    textAlign: 'center',
+  },
+  topProductInfo: {
+    flex: 1,
+  },
+  topProductName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#fff',
+    marginBottom: 4,
+  },
+  topProductSales: {
+    fontSize: 13,
+    color: '#888',
+  },
+  sortOption: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 8,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  sortOptionActive: {
+    backgroundColor: 'rgba(102, 126, 234, 0.2)',
+    borderColor: '#667eea',
+  },
+  sortOptionText: {
+    fontSize: 15,
+    color: '#fff',
+  },
+  sortOptionTextActive: {
+    color: '#fff',
+    fontWeight: '600',
+  },
+  sortOptionCheck: {
+    fontSize: 18,
+    color: '#667eea',
+    fontWeight: 'bold',
+  },
+  categoryOption: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 8,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  categoryOptionActive: {
+    backgroundColor: 'rgba(52, 199, 89, 0.2)',
+    borderColor: '#34C759',
+  },
+  categoryOptionText: {
+    fontSize: 15,
+    color: '#fff',
+  },
+  categoryOptionTextActive: {
+    color: '#34C759',
+    fontWeight: '600',
+  },
+  categoryOptionCheck: {
+    fontSize: 18,
+    color: '#34C759',
+    fontWeight: 'bold',
+  },
+  previewImage: {
+    width: '100%',
+    height: 300,
+    resizeMode: 'cover',
+  },
+  previewContent: {
+    padding: 20,
+  },
+  previewTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 8,
+  },
+  previewPrice: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#FFD60A',
+    marginBottom: 16,
+  },
+  previewDescription: {
+    fontSize: 15,
+    color: '#ddd',
+    lineHeight: 22,
+    marginBottom: 16,
+  },
+  previewMeta: {
+    gap: 8,
+  },
+  previewMetaText: {
+    fontSize: 14,
+    color: '#888',
   },
 });
 

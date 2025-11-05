@@ -16,6 +16,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { API_ENDPOINTS } from '../config/api';
 import { useAuth } from '../context/AuthContext';
 import Card from '../components/Card';
+import { formatCurrencyShort } from '../utils/currency';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -158,32 +159,53 @@ export default function SellerDashboardScreen({ navigation }: any) {
     return texts[status] || status;
   };
 
-  const renderStatCard = (title: string, value: string | number, icon: string, gradientColors: string[]) => (
-    <Animated.View 
-      style={[
-        styles.statCardContainer,
-        {
-          opacity: fadeAnim,
-          transform: [{ translateY: slideAnim }],
-        }
-      ]}
-    >
-      <LinearGradient
-        colors={gradientColors}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.statCard}
+  const renderStatCard = (
+    title: string, 
+    value: string | number, 
+    icon: string, 
+    gradientColors: string[],
+    onPress?: () => void
+  ) => {
+    const cardContent = (
+      <Animated.View 
+        style={[
+          styles.statCardContainer,
+          {
+            opacity: fadeAnim,
+            transform: [{ translateY: slideAnim }],
+          }
+        ]}
       >
-        <View style={styles.statHeader}>
-          <View style={styles.statIconContainer}>
-            <Text style={styles.statIcon}>{icon}</Text>
+        <LinearGradient
+          colors={gradientColors}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.statCard}
+        >
+          <View style={styles.statHeader}>
+            <View style={styles.statIconContainer}>
+              <Text style={styles.statIcon}>{icon}</Text>
+            </View>
+            <Text style={styles.statTitle}>{title}</Text>
           </View>
-          <Text style={styles.statTitle}>{title}</Text>
-        </View>
-        <Text style={styles.statValue}>{value}</Text>
-      </LinearGradient>
-    </Animated.View>
-  );
+          <Text style={styles.statValue}>{value}</Text>
+          {onPress && (
+            <Text style={styles.tapHint}>Toca para ver más →</Text>
+          )}
+        </LinearGradient>
+      </Animated.View>
+    );
+
+    if (onPress) {
+      return (
+        <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
+          {cardContent}
+        </TouchableOpacity>
+      );
+    }
+
+    return cardContent;
+  };
 
   const renderProductCard = (item: Product) => (
     <TouchableOpacity 
@@ -200,7 +222,7 @@ export default function SellerDashboardScreen({ navigation }: any) {
           />
           <View style={styles.productInfo}>
             <Text style={styles.productTitle} numberOfLines={1}>{item.title}</Text>
-            <Text style={styles.productPrice}>${item.price}</Text>
+              <Text style={styles.productPrice}>{formatCurrencyShort(item.price)}</Text>
             <View style={styles.productMeta}>
               <View style={[
                 styles.stockBadge,
@@ -232,7 +254,7 @@ export default function SellerDashboardScreen({ navigation }: any) {
             <Text style={styles.orderCustomer}>
               {item.user.firstName} {item.user.lastName}
             </Text>
-            <Text style={styles.orderTotal}>${item.total}</Text>
+            <Text style={styles.orderTotal}>{formatCurrencyShort(item.total)}</Text>
           </View>
           <LinearGradient
             colors={getStatusColor(item.status)}
@@ -256,8 +278,10 @@ export default function SellerDashboardScreen({ navigation }: any) {
     );
   }
 
+
   return (
     <View style={styles.container}>
+      {/* Header */}
       <LinearGradient
         colors={['#34C759', '#30B350', '#2A9F47']}
         style={styles.header}
@@ -290,25 +314,40 @@ export default function SellerDashboardScreen({ navigation }: any) {
         }
         showsVerticalScrollIndicator={false}
       >
-        {/* Stats del Día */}
+        {/* Stats Principales */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📊 Hoy</Text>
+          <Text style={styles.sectionTitle}>📊 Estadísticas</Text>
           <View style={styles.statsGrid}>
-            {renderStatCard('Ventas', stats?.todaySales || 0, '📈', ['#34C759', '#30B350'])}
-            {renderStatCard('Ingresos', `$${stats?.todayRevenue || 0}`, '💰', ['#FFD60A', '#FFA500'])}
+            {renderStatCard(
+              'Ventas', 
+              stats?.totalSales || 0, 
+              '📈', 
+              ['#34C759', '#30B350'],
+              () => navigation.navigate('SalesHistory', { timeframe: 'all' })
+            )}
+            {renderStatCard(
+              'Ingresos', 
+              `${formatCurrencyShort(stats?.totalRevenue || 0)} CLP`, 
+              '💰', 
+              ['#FFD60A', '#FFA500'],
+              () => navigation.navigate('Income', { timeframe: 'all' })
+            )}
           </View>
           <View style={[styles.statsGrid, { marginTop: 12 }]}>
-            {renderStatCard('Pendientes', stats?.pendingOrders || 0, '⏳', ['#FF9800', '#FB8C00'])}
-            {renderStatCard('Stock Bajo', stats?.lowStockProducts || 0, '⚠️', ['#FF3B30', '#FF2D20'])}
-          </View>
-        </View>
-
-        {/* Totales */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📈 Totales</Text>
-          <View style={styles.statsGrid}>
-            {renderStatCard('Ventas Totales', stats?.totalSales || 0, '🛒', ['#667eea', '#764ba2'])}
-            {renderStatCard('Ingresos Totales', `$${stats?.totalRevenue || 0}`, '💵', ['#f093fb', '#f5576c'])}
+            {renderStatCard(
+              'Pendientes', 
+              stats?.pendingOrders || 0, 
+              '⏳', 
+              ['#FF9800', '#FB8C00'],
+              () => navigation.navigate('PendingOrders')
+            )}
+            {renderStatCard(
+              'Stock Bajo', 
+              stats?.lowStockProducts || 0, 
+              '⚠️', 
+              ['#FF3B30', '#FF2D20'],
+              () => navigation.navigate('LowStockProducts')
+            )}
           </View>
         </View>
 
@@ -346,7 +385,7 @@ export default function SellerDashboardScreen({ navigation }: any) {
             
             <TouchableOpacity
               style={styles.actionButton}
-              onPress={() => Alert.alert('Reportes', 'Próximamente')}
+              onPress={() => navigation.navigate('Reports')}
               activeOpacity={0.7}
             >
               <LinearGradient
@@ -360,7 +399,7 @@ export default function SellerDashboardScreen({ navigation }: any) {
             
             <TouchableOpacity
               style={styles.actionButton}
-              onPress={() => Alert.alert('Ajustes', 'Próximamente')}
+              onPress={() => navigation.navigate('Settings')}
               activeOpacity={0.7}
             >
               <LinearGradient
@@ -436,22 +475,29 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    width: '100%',
+    paddingRight: 0,
   },
   welcomeSection: {
     flex: 1,
+    minWidth: 0,
+    marginRight: 12,
   },
   welcomeText: {
     fontSize: 28,
     fontWeight: 'bold',
     color: 'white',
     marginBottom: 4,
+    marginRight: 8,
   },
   subtitle: {
     fontSize: 16,
     color: 'rgba(255, 255, 255, 0.9)',
+    marginRight: 8,
   },
   notificationButton: {
     padding: 8,
+    marginLeft: 8,
   },
   bellContainer: {
     position: 'relative',
@@ -548,6 +594,12 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
     color: '#fff',
+  },
+  tapHint: {
+    fontSize: 11,
+    color: 'rgba(255, 255, 255, 0.7)',
+    marginTop: 8,
+    fontStyle: 'italic',
   },
   actionsGrid: {
     flexDirection: 'row',

@@ -23,7 +23,7 @@ export default function RegisterScreen({ navigation }: any) {
     firstName: '',
     lastName: '',
     username: '',
-    userType: 'BUYER' as 'BUYER' | 'SELLER',
+    userType: 'CLIENT' as 'CLIENT' | 'SELLER',
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -162,14 +162,14 @@ export default function RegisterScreen({ navigation }: any) {
               <TouchableOpacity
                 style={[
                   styles.userTypeButton,
-                  formData.userType === 'BUYER' && styles.userTypeButtonActive,
+                  formData.userType === 'CLIENT' && styles.userTypeButtonActive,
                 ]}
-                onPress={() => setFormData({ ...formData, userType: 'BUYER' })}
+                onPress={() => setFormData({ ...formData, userType: 'CLIENT' })}
               >
                 <Text
                   style={[
                     styles.userTypeText,
-                    formData.userType === 'BUYER' && styles.userTypeTextActive,
+                    formData.userType === 'CLIENT' && styles.userTypeTextActive,
                   ]}
                 >
                   🛒 Comprador

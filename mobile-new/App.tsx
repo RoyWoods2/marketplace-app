@@ -17,10 +17,15 @@ import ProductDetailScreen from './src/screens/ProductDetailScreen';
 import NotificationsScreen from './src/screens/NotificationsScreen';
 import CreateOrderScreen from './src/screens/CreateOrderScreen';
 import SellerTabNavigator from './src/navigation/SellerTabNavigator';
+import UnifiedTabNavigator from './src/navigation/UnifiedTabNavigator';
 import OnboardingScreen from './src/screens/OnboardingScreen';
+import TestNotificationsScreen from './src/screens/TestNotificationsScreen';
 
 // Import context
 import { AuthProvider, useAuth } from './src/context/AuthContext';
+
+// Import push notifications hook
+import usePushNotifications from './src/hooks/usePushNotifications';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -196,6 +201,9 @@ function AuthStack() {
 function AppNavigator() {
   const { isAuthenticated, loading, user } = useAuth();
   
+  // Inicializar push notifications dentro del AuthProvider
+  usePushNotifications();
+  
   console.log('🔍 AppNavigator - isAuthenticated:', isAuthenticated);
   console.log('🔍 AppNavigator - user:', user);
   console.log('🔍 AppNavigator - userType:', user?.userType);
@@ -223,9 +231,10 @@ function AppNavigator() {
           <>
             {user && user.userType === 'SELLER' ? (
               <>
+                {/* Unified Navigator: Sellers can both sell and buy */}
                 <Stack.Screen 
-                  name="SellerTabs" 
-                  component={SellerTabNavigator}
+                  name="UnifiedTabs" 
+                  component={UnifiedTabNavigator}
                   options={{ headerShown: false }}
                 />
                 <Stack.Screen 
@@ -234,13 +243,14 @@ function AppNavigator() {
                   options={{ title: 'Notificaciones' }}
                 />
                 <Stack.Screen 
-                  name="CreateOrder" 
-                  component={CreateOrderScreen}
-                  options={{ headerShown: false }}
+                  name="TestNotifications" 
+                  component={TestNotificationsScreen}
+                  options={{ title: 'Prueba Notificaciones' }}
                 />
               </>
             ) : (
               <>
+                {/* Client Navigator: Only buyer functions */}
                 <Stack.Screen 
                   name="MainTabs" 
                   component={MainTabs}
@@ -255,6 +265,11 @@ function AppNavigator() {
                   name="Notifications" 
                   component={NotificationsScreen}
                   options={{ title: 'Notificaciones' }}
+                />
+                <Stack.Screen 
+                  name="TestNotifications" 
+                  component={TestNotificationsScreen}
+                  options={{ title: 'Prueba Notificaciones' }}
                 />
               </>
             )}

@@ -1,4 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
+const PushNotificationService = require('./PushNotificationService');
+const ActivityLogService = require('./ActivityLogService');
 
 const prisma = new PrismaClient();
 
@@ -96,6 +98,9 @@ class NotificationService {
   // Notify seller about new order
   static async notifyNewOrder(sellerId, orderId, productTitle, buyerName, total) {
     try {
+      // Verificar si debe notificar
+      const shouldNotify = await this.shouldNotify(sellerId, 'ORDER_CREATED');
+      
       const notification = await this.createNotification(
         sellerId,
         'ORDER_CREATED',
@@ -109,6 +114,26 @@ class NotificationService {
           action: 'view_order'
         }
       );
+
+      // Enviar push notification
+      if (shouldNotify) {
+        await PushNotificationService.sendPushNotification(
+          sellerId,
+          'Nueva Orden Recibida',
+          `Has recibido una nueva orden de ${buyerName} por "${productTitle}" por $${total}`,
+          {
+            orderId,
+            productTitle,
+            buyerName,
+            total,
+            action: 'view_order',
+            type: 'ORDER_CREATED'
+          }
+        );
+      }
+
+      // Log de actividad
+      await ActivityLogService.logNotificationSent(notification.id, sellerId, 'ORDER_CREATED');
 
       return notification;
     } catch (error) {
@@ -130,11 +155,17 @@ class NotificationService {
         'CANCELLED': 'Tu orden ha sido cancelada'
       };
 
+      const title = statusMessages[newStatus] || 'Estado de orden actualizado';
+      const message = `Tu orden de "${productTitle}" de ${sellerName} ahora está: ${statusMessages[newStatus] || newStatus}`;
+
+      // Verificar si debe notificar
+      const shouldNotify = await this.shouldNotify(buyerId, 'ORDER_STATUS_CHANGED');
+      
       const notification = await this.createNotification(
         buyerId,
         'ORDER_STATUS_CHANGED',
-        statusMessages[newStatus] || 'Estado de orden actualizado',
-        `Tu orden de "${productTitle}" de ${sellerName} ahora está: ${statusMessages[newStatus] || newStatus}`,
+        title,
+        message,
         {
           orderId,
           productTitle,
@@ -143,6 +174,26 @@ class NotificationService {
           action: 'view_order'
         }
       );
+
+      // Enviar push notification (especialmente importante para READY_FOR_PICKUP)
+      if (shouldNotify) {
+        await PushNotificationService.sendPushNotification(
+          buyerId,
+          title,
+          message,
+          {
+            orderId,
+            productTitle,
+            newStatus,
+            sellerName,
+            action: 'view_order',
+            type: 'ORDER_STATUS_CHANGED'
+          }
+        );
+      }
+
+      // Log de actividad
+      await ActivityLogService.logNotificationSent(notification.id, buyerId, 'ORDER_STATUS_CHANGED');
 
       return notification;
     } catch (error) {

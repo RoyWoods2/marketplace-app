@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { Video, ResizeMode } from 'expo-av';
 import { useAuth } from '../context/AuthContext';
+import { formatCurrencyShort } from '../utils/currency';
 import ContactModal from '../components/ContactModal';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -154,14 +155,19 @@ export default function HomeScreen({ navigation }: any) {
 
   const handleProductPress = (product: any) => {
     console.log('🔍 Navigating to ProductDetail with productId:', product.id);
-    console.log('🔍 Navigation object:', navigation);
     
     try {
-      // Navegar al stack principal
-      navigation.getParent()?.navigate('ProductDetail', { productId: product.id });
+      // Navegar directamente al ProductDetail en el mismo stack
+      navigation.navigate('ProductDetail', { productId: product.id });
     } catch (error) {
       console.error('❌ Navigation error:', error);
-      Alert.alert('Error', 'No se pudo navegar a los detalles del producto');
+      // Si falla, intentar con el parent navigator
+      try {
+        navigation.getParent()?.navigate('ProductDetail', { productId: product.id });
+      } catch (parentError) {
+        console.error('❌ Parent navigation error:', parentError);
+        Alert.alert('Error', 'No se pudo navegar a los detalles del producto');
+      }
     }
   };
 
@@ -214,7 +220,7 @@ export default function HomeScreen({ navigation }: any) {
             onPress={() => handleProductPress(item.product)}
           >
             <Text style={styles.productTitle}>{item.product.title}</Text>
-            <Text style={styles.productPrice}>${item.product.price}</Text>
+            <Text style={styles.productPrice}>{formatCurrencyShort(item.product.price)}</Text>
           </TouchableOpacity>
         )}
       </View>

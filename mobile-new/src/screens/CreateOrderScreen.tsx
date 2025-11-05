@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { API_ENDPOINTS } from '../config/api';
 import { useAuth } from '../context/AuthContext';
+import { formatCurrencyShort } from '../utils/currency';
 
 interface Product {
   id: string;
@@ -36,6 +37,8 @@ interface OrderData {
   branchId: string;
   notes: string;
   total: number;
+  deliveryType: 'PICKUP' | 'DELIVERY';
+  deliveryAddress?: string;
 }
 
 export default function CreateOrderScreen({ navigation }: any) {
@@ -54,6 +57,8 @@ export default function CreateOrderScreen({ navigation }: any) {
     branchId: '',
     notes: '',
     total: 0,
+    deliveryType: 'PICKUP',
+    deliveryAddress: '',
   });
 
   useEffect(() => {
@@ -109,8 +114,18 @@ export default function CreateOrderScreen({ navigation }: any) {
 
   const handleCreateOrder = async () => {
     try {
-      if (!selectedProduct || !selectedBranch) {
-        Alert.alert('Error', 'Por favor selecciona un producto y una sucursal');
+      if (!selectedProduct) {
+        Alert.alert('Error', 'Por favor selecciona un producto');
+        return;
+      }
+
+      if (orderData.deliveryType === 'PICKUP' && !selectedBranch) {
+        Alert.alert('Error', 'Por favor selecciona una sucursal para retiro');
+        return;
+      }
+
+      if (orderData.deliveryType === 'DELIVERY' && !orderData.deliveryAddress?.trim()) {
+        Alert.alert('Error', 'Por favor ingresa la dirección de entrega');
         return;
       }
 
@@ -133,7 +148,9 @@ export default function CreateOrderScreen({ navigation }: any) {
           branchId: orderData.branchId,
           notes: orderData.notes,
           total: orderData.total,
-          userId: user?.id
+          userId: user?.id,
+          deliveryType: orderData.deliveryType,
+          deliveryAddress: orderData.deliveryType === 'DELIVERY' ? orderData.deliveryAddress : null,
         }),
       });
 
@@ -169,7 +186,7 @@ export default function CreateOrderScreen({ navigation }: any) {
       }}
     >
       <Text style={styles.productTitle}>{item.title}</Text>
-      <Text style={styles.productPrice}>${item.price}</Text>
+      <Text style={styles.productPrice}>{formatCurrencyShort(item.price)}</Text>
       <Text style={styles.productStock}>Stock: {item.stock}</Text>
     </TouchableOpacity>
   );
@@ -214,7 +231,7 @@ export default function CreateOrderScreen({ navigation }: any) {
           </TouchableOpacity>
           {selectedProduct && (
             <View style={styles.productInfo}>
-              <Text style={styles.productDetail}>Precio: ${selectedProduct.price}</Text>
+              <Text style={styles.productDetail}>Precio: {formatCurrencyShort(selectedProduct.price)}</Text>
               <Text style={styles.productDetail}>Stock: {selectedProduct.stock}</Text>
             </View>
           )}
@@ -254,25 +271,78 @@ export default function CreateOrderScreen({ navigation }: any) {
           </View>
         </View>
 
-        {/* Branch Selection */}
+        {/* Delivery Type Selection */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>🏪 Sucursal de Entrega</Text>
-          <TouchableOpacity
-            style={styles.selector}
-            onPress={() => setShowBranchModal(true)}
-          >
-            <Text style={selectedBranch ? styles.selectorText : styles.selectorPlaceholder}>
-              {selectedBranch ? selectedBranch.name : 'Seleccionar sucursal'}
-            </Text>
-            <Text style={styles.selectorArrow}>▼</Text>
-          </TouchableOpacity>
-          {selectedBranch && (
-            <View style={styles.branchInfo}>
-              <Text style={styles.branchDetail}>{selectedBranch.address}</Text>
-              <Text style={styles.branchDetail}>{selectedBranch.phone}</Text>
-            </View>
-          )}
+          <Text style={styles.sectionTitle}>🚚 Tipo de Entrega</Text>
+          <View style={styles.deliveryTypeContainer}>
+            <TouchableOpacity
+              style={[
+                styles.deliveryTypeButton,
+                orderData.deliveryType === 'PICKUP' && styles.deliveryTypeButtonActive,
+              ]}
+              onPress={() => setOrderData(prev => ({ ...prev, deliveryType: 'PICKUP' }))}
+            >
+              <Text style={[
+                styles.deliveryTypeText,
+                orderData.deliveryType === 'PICKUP' && styles.deliveryTypeTextActive,
+              ]}>
+                📦 Retiro en Sucursal
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.deliveryTypeButton,
+                orderData.deliveryType === 'DELIVERY' && styles.deliveryTypeButtonActive,
+              ]}
+              onPress={() => setOrderData(prev => ({ ...prev, deliveryType: 'DELIVERY' }))}
+            >
+              <Text style={[
+                styles.deliveryTypeText,
+                orderData.deliveryType === 'DELIVERY' && styles.deliveryTypeTextActive,
+              ]}>
+                🏠 Entrega a Domicilio
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
+
+        {/* Branch Selection - Only if PICKUP */}
+        {orderData.deliveryType === 'PICKUP' && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>🏪 Sucursal de Retiro</Text>
+            <TouchableOpacity
+              style={styles.selector}
+              onPress={() => setShowBranchModal(true)}
+            >
+              <Text style={selectedBranch ? styles.selectorText : styles.selectorPlaceholder}>
+                {selectedBranch ? selectedBranch.name : 'Seleccionar sucursal'}
+              </Text>
+              <Text style={styles.selectorArrow}>▼</Text>
+            </TouchableOpacity>
+            {selectedBranch && (
+              <View style={styles.branchInfo}>
+                <Text style={styles.branchDetail}>{selectedBranch.address}</Text>
+                <Text style={styles.branchDetail}>{selectedBranch.phone}</Text>
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* Delivery Address - Only if DELIVERY */}
+        {orderData.deliveryType === 'DELIVERY' && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>📍 Dirección de Entrega</Text>
+            <TextInput
+              style={styles.addressInput}
+              placeholder="Ingresa tu dirección completa..."
+              placeholderTextColor="#999"
+              value={orderData.deliveryAddress}
+              onChangeText={(text) => setOrderData(prev => ({ ...prev, deliveryAddress: text }))}
+              multiline
+              numberOfLines={3}
+            />
+          </View>
+        )}
 
         {/* Notes */}
         <View style={styles.section}>
@@ -290,14 +360,25 @@ export default function CreateOrderScreen({ navigation }: any) {
         {/* Total */}
         <View style={styles.totalSection}>
           <Text style={styles.totalLabel}>Total:</Text>
-          <Text style={styles.totalAmount}>${orderData.total}</Text>
+          <Text style={styles.totalAmount}>{formatCurrencyShort(orderData.total)}</Text>
         </View>
 
         {/* Create Button */}
         <TouchableOpacity
-          style={[styles.createButton, (!selectedProduct || !selectedBranch || loading) && styles.disabledButton]}
+          style={[
+            styles.createButton,
+            (!selectedProduct || 
+             (orderData.deliveryType === 'PICKUP' && !selectedBranch) ||
+             (orderData.deliveryType === 'DELIVERY' && !orderData.deliveryAddress?.trim()) ||
+             loading) && styles.disabledButton
+          ]}
           onPress={handleCreateOrder}
-          disabled={!selectedProduct || !selectedBranch || loading}
+          disabled={
+            !selectedProduct ||
+            (orderData.deliveryType === 'PICKUP' && !selectedBranch) ||
+            (orderData.deliveryType === 'DELIVERY' && !orderData.deliveryAddress?.trim()) ||
+            loading
+          }
         >
           {loading ? (
             <ActivityIndicator color="white" />
@@ -470,6 +551,43 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ddd',
     textAlignVertical: 'top',
+  },
+  deliveryTypeContainer: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  deliveryTypeButton: {
+    flex: 1,
+    backgroundColor: 'white',
+    padding: 16,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#D5D9D9',
+    alignItems: 'center',
+  },
+  deliveryTypeButtonActive: {
+    borderColor: '#007185',
+    backgroundColor: '#E6F2FF',
+  },
+  deliveryTypeText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#565959',
+  },
+  deliveryTypeTextActive: {
+    color: '#007185',
+    fontWeight: '600',
+  },
+  addressInput: {
+    backgroundColor: 'white',
+    padding: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    textAlignVertical: 'top',
+    fontSize: 15,
+    color: '#333',
+    minHeight: 100,
   },
   totalSection: {
     flexDirection: 'row',

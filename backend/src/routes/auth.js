@@ -9,7 +9,7 @@ const prisma = new PrismaClient();
 // Register
 router.post('/register', async (req, res) => {
   try {
-    const { email, username, password, firstName, lastName } = req.body;
+    const { email, username, password, firstName, lastName, userType } = req.body;
 
     // Check if user already exists
     const existingUser = await prisma.user.findFirst({
@@ -25,6 +25,10 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ error: 'User already exists' });
     }
 
+    // Validate userType
+    const validUserTypes = ['CLIENT', 'SELLER', 'ADMIN'];
+    const finalUserType = validUserTypes.includes(userType) ? userType : 'CLIENT';
+
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -36,7 +40,7 @@ router.post('/register', async (req, res) => {
         password: hashedPassword,
         firstName,
         lastName,
-        userType: 'CLIENT' // Default user type
+        userType: finalUserType // Use provided userType or default to CLIENT
       },
       select: {
         id: true,

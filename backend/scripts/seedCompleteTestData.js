@@ -10,10 +10,14 @@ async function main() {
     // Limpiar datos existentes (opcional - comentar si quieres mantener datos existentes)
     console.log('🧹 Limpiando datos existentes...');
     await prisma.notification.deleteMany();
+    await prisma.review.deleteMany(); // Eliminar reviews primero (tienen FK a products)
     await prisma.reel.deleteMany();
     await prisma.order.deleteMany();
     await prisma.product.deleteMany();
     await prisma.branch.deleteMany();
+    await prisma.activityLog.deleteMany(); // Eliminar logs de actividad
+    await prisma.userSettings.deleteMany(); // Eliminar configuraciones
+    await prisma.sellerStats.deleteMany(); // Eliminar estadísticas
     await prisma.user.deleteMany();
 
     // Crear sucursales
@@ -298,7 +302,7 @@ async function main() {
     // Crear órdenes de prueba
     console.log('🛒 Creando órdenes de prueba...');
     const orders = await Promise.all([
-      // Orden 1: Cliente 1 -> Producto de María
+      // Orden 1: Cliente 1 -> Producto de María (PICKUP)
       prisma.order.create({
         data: {
           userId: clients[0].id,
@@ -306,6 +310,7 @@ async function main() {
           quantity: 1,
           status: 'PAYMENT_CONFIRMED',
           paymentMethod: 'TRANSFERENCIA',
+          deliveryType: 'PICKUP',
           notes: 'Por favor, entregar en sucursal centro',
           branchId: branches[0].id,
           pickupCode: 'PC001',
@@ -314,7 +319,7 @@ async function main() {
           total: 25.99,
         },
       }),
-      // Orden 2: Cliente 2 -> Producto de Carlos
+      // Orden 2: Cliente 2 -> Producto de Carlos (DELIVERY)
       prisma.order.create({
         data: {
           userId: clients[1].id,
@@ -322,15 +327,17 @@ async function main() {
           quantity: 1,
           status: 'PREPARING',
           paymentMethod: 'EFECTIVO',
+          deliveryType: 'DELIVERY',
+          deliveryAddress: 'Calle Principal 123, Departamento 4B, Ciudad',
           notes: 'Torta sin nueces por alergia',
-          branchId: branches[1].id,
+          branchId: null,
           pickupCode: 'PC002',
           qrCode: 'QR002',
           qrSecretToken: 'secret002',
           total: 28.99,
         },
       }),
-      // Orden 3: Cliente 3 -> Producto de Ana
+      // Orden 3: Cliente 3 -> Producto de Ana (PICKUP)
       prisma.order.create({
         data: {
           userId: clients[2].id,
@@ -338,6 +345,7 @@ async function main() {
           quantity: 1,
           status: 'READY_FOR_PICKUP',
           paymentMethod: 'TRANSFERENCIA',
+          deliveryType: 'PICKUP',
           notes: 'Anillo talla 7',
           branchId: branches[2].id,
           pickupCode: 'PC003',
@@ -346,7 +354,7 @@ async function main() {
           total: 85.00,
         },
       }),
-      // Orden 4: Cliente 1 -> Producto de Carlos
+      // Orden 4: Cliente 1 -> Producto de Carlos (DELIVERY)
       prisma.order.create({
         data: {
           userId: clients[0].id,
@@ -354,12 +362,31 @@ async function main() {
           quantity: 2,
           status: 'PENDING',
           paymentMethod: 'EFECTIVO',
+          deliveryType: 'DELIVERY',
+          deliveryAddress: 'Av. Libertad 456, Casa, Barrio Norte',
           notes: 'Cupcakes de chocolate y vainilla',
-          branchId: branches[0].id,
+          branchId: null,
           pickupCode: 'PC004',
           qrCode: 'QR004',
           qrSecretToken: 'secret004',
           total: 37.00, // 2 cupcakes a $18.50 cada uno
+        },
+      }),
+      // Orden 5: Cliente 2 -> Producto de Ana (PICKUP)
+      prisma.order.create({
+        data: {
+          userId: clients[1].id,
+          productId: products[7].id,
+          quantity: 1,
+          status: 'DELIVERED',
+          paymentMethod: 'TRANSFERENCIA',
+          deliveryType: 'PICKUP',
+          notes: 'Anillo entregado correctamente',
+          branchId: branches[1].id,
+          pickupCode: 'PC005',
+          qrCode: 'QR005',
+          qrSecretToken: 'secret005',
+          total: 120.00,
         },
       }),
     ]);
@@ -589,6 +616,64 @@ async function main() {
 
     console.log(`✅ Creados ${reels.length} reels`);
 
+    // Crear reviews/reseñas de prueba
+    console.log('⭐ Creando reviews de prueba...');
+    const reviews = await Promise.all([
+      // Reviews para productos de María
+      prisma.review.create({
+        data: {
+          userId: clients[0].id,
+          productId: products[0].id,
+          rating: 5,
+          comment: 'Excelente calidad, el macramé es hermoso y la planta llegó perfecta. ¡Altamente recomendado!',
+        },
+      }),
+      prisma.review.create({
+        data: {
+          userId: clients[1].id,
+          productId: products[1].id,
+          rating: 4,
+          comment: 'Muy bonito el jarrón, aunque esperaba que fuera un poco más grande. La calidad es buena.',
+        },
+      }),
+      // Reviews para productos de Carlos
+      prisma.review.create({
+        data: {
+          userId: clients[2].id,
+          productId: products[3].id,
+          rating: 5,
+          comment: 'La torta estaba deliciosa, el sabor perfecto y la presentación hermosa. Definitivamente volveré a pedir.',
+        },
+      }),
+      prisma.review.create({
+        data: {
+          userId: clients[0].id,
+          productId: products[4].id,
+          rating: 5,
+          comment: 'Los cupcakes son increíbles, decoración perfecta y muy sabrosos. Mi familia los amó.',
+        },
+      }),
+      // Reviews para productos de Ana
+      prisma.review.create({
+        data: {
+          userId: clients[1].id,
+          productId: products[6].id,
+          rating: 5,
+          comment: 'El collar es precioso, la plata es de muy buena calidad y el diseño es único. Estoy muy contenta.',
+        },
+      }),
+      prisma.review.create({
+        data: {
+          userId: clients[2].id,
+          productId: products[7].id,
+          rating: 4,
+          comment: 'El anillo es elegante y bien hecho. La talla fue perfecta. Recomendado.',
+        },
+      }),
+    ]);
+
+    console.log(`✅ Creadas ${reviews.length} reviews`);
+
     // Mostrar resumen
     console.log('\n📊 RESUMEN DE DATOS CREADOS:');
     console.log(`🏢 Sucursales: ${branches.length}`);
@@ -597,6 +682,7 @@ async function main() {
     console.log(`🛒 Órdenes: ${orders.length}`);
     console.log(`🔔 Notificaciones: ${notifications.length}`);
     console.log(`🎬 Reels: ${reels.length}`);
+    console.log(`⭐ Reviews: ${reviews.length}`);
 
     console.log('\n🔑 CREDENCIALES DE PRUEBA:');
     console.log('Admin: admin@marketplace.com / 123456');

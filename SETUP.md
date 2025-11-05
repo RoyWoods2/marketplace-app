@@ -142,6 +142,20 @@ Esto abrirá una interfaz web para ver las tablas de la base de datos.
 - Escanea el QR con Expo Go en tu móvil
 - O ejecuta en emulador/web desde Expo Dev Tools
 
+### 6.4 Llenar Base de Datos con Datos de Prueba (Opcional):
+```bash
+# Script completo con todos los datos
+node scripts/seedCompleteTestData.js
+
+# O script básico
+node scripts/createTestData.js
+```
+
+**Credenciales de prueba:**
+- Admin: `admin@marketplace.com` / `123456`
+- Vendedores: `vendedor1@example.com` / `123456`
+- Clientes: `cliente1@example.com` / `123456`
+
 ## 🔧 Scripts Útiles
 
 ### Backend:

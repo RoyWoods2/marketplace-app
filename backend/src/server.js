@@ -12,8 +12,8 @@ const app = express();
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
+    origin: process.env.CORS_ORIGIN || "*",
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"]
   }
 });
 
@@ -21,7 +21,12 @@ const prisma = new PrismaClient();
 const PORT = process.env.PORT || 3001;
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: process.env.CORS_ORIGIN || "*",
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -32,6 +37,7 @@ app.use('/api/products', require('./routes/products'));
 app.use('/api/reels', require('./routes/reels'));
 app.use('/api/orders', require('./routes/orders'));
 app.use('/api/notifications', require('./routes/notifications'));
+app.use('/api/push-notifications', require('./routes/push-notifications'));
 app.use('/api/seller', require('./routes/seller'));
 app.use('/api/buyer', require('./routes/buyer'));
 app.use('/api/admin', require('./routes/admin'));
