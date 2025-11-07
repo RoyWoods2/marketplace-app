@@ -10,6 +10,7 @@ import {
   Linking,
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
+import { API_ENDPOINTS } from '../config/api';
 
 interface BuyerStats {
   totalOrders: number;
@@ -74,7 +75,7 @@ export default function BuyerDashboardScreen() {
       setLoading(true);
       
       // Fetch buyer stats
-      const statsResponse = await fetch('http://localhost:3001/api/buyer/dashboard', {
+      const statsResponse = await fetch(API_ENDPOINTS.BUYER_DASHBOARD, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -86,7 +87,7 @@ export default function BuyerDashboardScreen() {
       }
 
       // Fetch recent orders
-      const ordersResponse = await fetch('http://localhost:3001/api/buyer/orders?limit=5', {
+      const ordersResponse = await fetch(`${API_ENDPOINTS.BUYER_ORDERS}?limit=5`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },

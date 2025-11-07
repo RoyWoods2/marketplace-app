@@ -21,6 +21,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../context/AuthContext';
 import GradientButton from '../components/GradientButton';
 import Card from '../components/Card';
+import { API_ENDPOINTS } from '../config/api';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -89,7 +90,7 @@ export default function CreateScreen() {
 
   const loadUserProducts = async () => {
     try {
-      const response = await fetch('http://192.168.1.120:3001/api/products');
+      const response = await fetch(API_ENDPOINTS.PRODUCTS);
       if (response.ok) {
         const data = await response.json();
         const products = data.products || data;
@@ -162,7 +163,7 @@ export default function CreateScreen() {
         userId: user.id,
       };
 
-      const response = await fetch('http://192.168.1.120:3001/api/products', {
+      const response = await fetch(API_ENDPOINTS.PRODUCTS, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(productData),
@@ -210,7 +211,7 @@ export default function CreateScreen() {
         productId: reelForm.productId || null,
       };
 
-      const response = await fetch('http://192.168.1.120:3001/api/reels', {
+      const response = await fetch(API_ENDPOINTS.REELS, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(reelData),

@@ -1,7 +1,8 @@
 import React from 'react';
-import { Text, View, StyleSheet } from 'react-native';
+import { Text, View, StyleSheet, Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Import screens - Seller
 import SellerDashboardScreen from '../screens/SellerDashboardScreenMejor';
@@ -203,6 +204,8 @@ function ProfileStack() {
 
 // Unified Tab Navigator - Combines Seller and Buyer functions
 export default function UnifiedTabNavigator() {
+  const insets = useSafeAreaInsets();
+  
   return (
     <Tab.Navigator
       screenOptions={{
@@ -210,8 +213,8 @@ export default function UnifiedTabNavigator() {
           backgroundColor: '#1a1a2e',
           borderTopColor: 'rgba(255, 255, 255, 0.1)',
           borderTopWidth: 1,
-          height: 60,
-          paddingBottom: 8,
+          height: 60 + (Platform.OS === 'android' ? Math.max(insets.bottom, 8) : 0),
+          paddingBottom: Platform.OS === 'android' ? Math.max(insets.bottom, 8) : 8,
           paddingTop: 8,
         },
         tabBarActiveTintColor: '#34C759',

@@ -72,7 +72,7 @@ export default function OrderDetailScreen({ route, navigation }: any) {
   const loadQRCode = async () => {
     try {
       setLoadingQR(true);
-      const response = await fetch(`http://192.168.1.120:3001/api/orders/${order.id}/qr`, {
+      const response = await fetch(API_ENDPOINTS.ORDER_QR(order.id), {
         headers: { 'Authorization': `Bearer ${token}` },
       });
 

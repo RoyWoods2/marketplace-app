@@ -96,6 +96,11 @@ export default function SellerOrdersScreen({ navigation }: any) {
   const { token, user } = useAuth();
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const headerOpacity = useRef(new Animated.Value(1)).current;
+  const headerTranslateY = useRef(new Animated.Value(0)).current;
+  const lastScrollY = useRef(0);
+  const scrollDirection = useRef<'up' | 'down'>('up');
 
   useEffect(() => {
     fetchOrders();
@@ -138,6 +143,56 @@ export default function SellerOrdersScreen({ navigation }: any) {
     await fetchOrders();
     setRefreshing(false);
   };
+
+  const handleScroll = Animated.event(
+    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+    {
+      useNativeDriver: false,
+      listener: (event: any) => {
+        const currentScrollY = event.nativeEvent.contentOffset.y;
+        const diff = currentScrollY - lastScrollY.current;
+        
+        // Determine scroll direction
+        if (diff > 0 && currentScrollY > 50) {
+          // Scrolling down and past threshold - hide header
+          if (scrollDirection.current !== 'down') {
+            scrollDirection.current = 'down';
+            Animated.parallel([
+              Animated.timing(headerOpacity, {
+                toValue: 0,
+                duration: 200,
+                useNativeDriver: true,
+              }),
+              Animated.timing(headerTranslateY, {
+                toValue: -150,
+                duration: 200,
+                useNativeDriver: true,
+              }),
+            ]).start();
+          }
+        } else if (diff < 0 || currentScrollY <= 10) {
+          // Scrolling up or at top - show header
+          if (scrollDirection.current !== 'up') {
+            scrollDirection.current = 'up';
+            Animated.parallel([
+              Animated.timing(headerOpacity, {
+                toValue: 1,
+                duration: 200,
+                useNativeDriver: true,
+              }),
+              Animated.timing(headerTranslateY, {
+                toValue: 0,
+                duration: 200,
+                useNativeDriver: true,
+              }),
+            ]).start();
+          }
+        }
+        
+        lastScrollY.current = currentScrollY;
+      },
+    }
+  );
 
   const getFilteredAndSortedOrders = () => {
     let filtered = orders;
@@ -462,49 +517,59 @@ export default function SellerOrdersScreen({ navigation }: any) {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <LinearGradient
-        colors={['#34C759', '#30B350']}
-        style={styles.header}
+      <Animated.View
+        style={[
+          styles.headerContainer,
+          {
+            opacity: headerOpacity,
+            transform: [{ translateY: headerTranslateY }],
+          },
+        ]}
       >
-        <View style={styles.headerContent}>
-          <View style={styles.headerLeft}>
-            <Text style={styles.headerTitle}>🛒 Mis Órdenes</Text>
-            <Text style={styles.headerSubtitle}>{orders.length} orden{orders.length !== 1 ? 'es' : ''} total{orders.length !== 1 ? 'es' : ''}</Text>
+        <LinearGradient
+          colors={['#34C759', '#30B350']}
+          style={styles.header}
+        >
+          <View style={styles.headerContent}>
+            <View style={styles.headerLeft}>
+              <Text style={styles.headerTitle}>🛒 Mis Órdenes</Text>
+              <Text style={styles.headerSubtitle}>{orders.length} orden{orders.length !== 1 ? 'es' : ''} total{orders.length !== 1 ? 'es' : ''}</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.headerActionButton}
+              onPress={() => setShowStatsModal(true)}
+            >
+              <Text style={styles.headerActionIcon}>📊</Text>
+            </TouchableOpacity>
+          </View>
+        </LinearGradient>
+
+        {/* Search Bar */}
+        <View style={styles.searchContainer}>
+          <View style={styles.searchInputWrapper}>
+            <Text style={styles.searchIcon}>🔍</Text>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Buscar por cliente, producto, código..."
+              placeholderTextColor="#888"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity onPress={() => setSearchQuery('')}>
+                <Text style={styles.clearIcon}>✕</Text>
+              </TouchableOpacity>
+            )}
           </View>
           <TouchableOpacity
-            style={styles.headerActionButton}
-            onPress={() => setShowStatsModal(true)}
+            style={styles.sortButton}
+            onPress={() => setShowSortModal(true)}
           >
-            <Text style={styles.headerActionIcon}>📊</Text>
+            <Text style={styles.sortButtonIcon}>🔀</Text>
+            <Text style={styles.sortButtonText}>{getSortLabel()}</Text>
           </TouchableOpacity>
         </View>
-      </LinearGradient>
-
-      {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <View style={styles.searchInputWrapper}>
-          <Text style={styles.searchIcon}>🔍</Text>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Buscar por cliente, producto, código..."
-            placeholderTextColor="#888"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery('')}>
-              <Text style={styles.clearIcon}>✕</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-        <TouchableOpacity
-          style={styles.sortButton}
-          onPress={() => setShowSortModal(true)}
-        >
-          <Text style={styles.sortButtonIcon}>🔀</Text>
-          <Text style={styles.sortButtonText}>{getSortLabel()}</Text>
-        </TouchableOpacity>
-      </View>
+      </Animated.View>
 
       {/* Today's Summary Card */}
       {(stats.todayPending > 0 || stats.todayRevenue > 0 || stats.todayCompleted > 0) && showSummary ? (
@@ -550,7 +615,15 @@ export default function SellerOrdersScreen({ navigation }: any) {
       ) : null}
 
       {/* Filters */}
-      <View style={styles.filtersContainer}>
+      <Animated.View
+        style={[
+          styles.filtersContainer,
+          {
+            opacity: headerOpacity,
+            transform: [{ translateY: headerTranslateY }],
+          },
+        ]}
+      >
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filtersScroll}>
           <FilterButton type="all" label="Todas" icon="📋" count={orders.length} />
           <FilterButton type="pending" label="Pendientes" icon="⏳" count={pendingCount} />
@@ -558,14 +631,16 @@ export default function SellerOrdersScreen({ navigation }: any) {
           <FilterButton type="ready" label="Listas" icon="✅" count={readyCount} />
           <FilterButton type="delivered" label="Entregadas" icon="✅" count={deliveredCount} />
         </ScrollView>
-      </View>
+      </Animated.View>
 
       {/* Orders List */}
-      <FlatList
+      <Animated.FlatList
         data={filteredOrders}
         renderItem={renderOrder}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
         refreshControl={
           <RefreshControl 
             refreshing={refreshing} 
@@ -608,6 +683,14 @@ const styles = StyleSheet.create({
     color: '#fff',
     marginTop: 16,
     fontSize: 16,
+  },
+  headerContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 1000,
+    elevation: 5,
   },
   header: {
     paddingTop: 60,
@@ -697,6 +780,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: 16,
+    paddingTop: 280,
   },
   orderCard: {
     marginBottom: 12,

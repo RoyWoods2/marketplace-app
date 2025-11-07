@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { formatCurrencyShort } from '../utils/currency';
+import { API_ENDPOINTS } from '../config/api';
 
 interface Product {
   id: string;
@@ -58,7 +59,7 @@ export default function ProductDetailScreen({ route, navigation }: any) {
 
   const fetchProduct = async () => {
     try {
-      const response = await fetch(`http://192.168.1.120:3001/api/products/${productId}`, {
+      const response = await fetch(API_ENDPOINTS.PRODUCT_BY_ID(productId), {
         headers: {
           'Authorization': `Bearer ${token}`,
         },

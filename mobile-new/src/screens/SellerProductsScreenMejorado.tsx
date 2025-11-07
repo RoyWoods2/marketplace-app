@@ -79,6 +79,11 @@ export default function SellerProductsScreen() {
   const { token, user } = useAuth();
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const headerOpacity = useRef(new Animated.Value(1)).current;
+  const headerTranslateY = useRef(new Animated.Value(0)).current;
+  const lastScrollY = useRef(0);
+  const scrollDirection = useRef<'up' | 'down'>('up');
 
   const [newProduct, setNewProduct] = useState({
     title: '',
@@ -165,6 +170,56 @@ export default function SellerProductsScreen() {
     await fetchProducts();
     setRefreshing(false);
   };
+
+  const handleScroll = Animated.event(
+    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+    {
+      useNativeDriver: false,
+      listener: (event: any) => {
+        const currentScrollY = event.nativeEvent.contentOffset.y;
+        const diff = currentScrollY - lastScrollY.current;
+        
+        // Determine scroll direction
+        if (diff > 0 && currentScrollY > 50) {
+          // Scrolling down and past threshold - hide header
+          if (scrollDirection.current !== 'down') {
+            scrollDirection.current = 'down';
+            Animated.parallel([
+              Animated.timing(headerOpacity, {
+                toValue: 0,
+                duration: 200,
+                useNativeDriver: true,
+              }),
+              Animated.timing(headerTranslateY, {
+                toValue: -150,
+                duration: 200,
+                useNativeDriver: true,
+              }),
+            ]).start();
+          }
+        } else if (diff < 0 || currentScrollY <= 10) {
+          // Scrolling up or at top - show header
+          if (scrollDirection.current !== 'up') {
+            scrollDirection.current = 'up';
+            Animated.parallel([
+              Animated.timing(headerOpacity, {
+                toValue: 1,
+                duration: 200,
+                useNativeDriver: true,
+              }),
+              Animated.timing(headerTranslateY, {
+                toValue: 0,
+                duration: 200,
+                useNativeDriver: true,
+              }),
+            ]).start();
+          }
+        }
+        
+        lastScrollY.current = currentScrollY;
+      },
+    }
+  );
 
   const handleAddProduct = () => {
     setNewProduct({
@@ -550,79 +605,99 @@ export default function SellerProductsScreen() {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <LinearGradient
-        colors={['#34C759', '#30B350']}
-        style={styles.header}
+      <Animated.View
+        style={[
+          styles.headerContainer,
+          {
+            opacity: headerOpacity,
+            transform: [{ translateY: headerTranslateY }],
+          },
+        ]}
       >
-        <View style={styles.headerContent}>
-          <View style={styles.headerLeft}>
-            <Text style={styles.headerTitle}>📦 Mis Productos</Text>
-            <Text style={styles.headerSubtitle}>{products.length} producto{products.length !== 1 ? 's' : ''} total{products.length !== 1 ? 'es' : ''}</Text>
-          </View>
-          <View style={styles.headerActions}>
-            <TouchableOpacity
-              style={styles.headerActionButton}
-              onPress={() => setShowStatsModal(true)}
-            >
-              <Text style={styles.headerActionIcon}>📊</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.addButton}
-              onPress={handleAddProduct}
-            >
-              <LinearGradient
-                colors={['rgba(255,255,255,0.3)', 'rgba(255,255,255,0.2)']}
-                style={styles.addButtonGradient}
-              >
-                <Text style={styles.addButtonText}>+ Agregar</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </LinearGradient>
-
-      {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <View style={styles.searchInputWrapper}>
-          <Text style={styles.searchIcon}>🔍</Text>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Buscar productos..."
-            placeholderTextColor="#888"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery('')}>
-              <Text style={styles.clearIcon}>✕</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-        <TouchableOpacity
-          style={styles.sortButton}
-          onPress={() => setShowSortModal(true)}
+        <LinearGradient
+          colors={['#34C759', '#30B350']}
+          style={styles.header}
         >
-          <Text style={styles.sortButtonIcon}>🔀</Text>
-          <Text style={styles.sortButtonText}>{getSortLabel()}</Text>
-        </TouchableOpacity>
-      </View>
+          <View style={styles.headerContent}>
+            <View style={styles.headerLeft}>
+              <Text style={styles.headerTitle}>📦 Mis Productos</Text>
+              <Text style={styles.headerSubtitle}>{products.length} producto{products.length !== 1 ? 's' : ''} total{products.length !== 1 ? 'es' : ''}</Text>
+            </View>
+            <View style={styles.headerActions}>
+              <TouchableOpacity
+                style={styles.headerActionButton}
+                onPress={() => setShowStatsModal(true)}
+              >
+                <Text style={styles.headerActionIcon}>📊</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.addButton}
+                onPress={handleAddProduct}
+              >
+                <LinearGradient
+                  colors={['rgba(255,255,255,0.3)', 'rgba(255,255,255,0.2)']}
+                  style={styles.addButtonGradient}
+                >
+                  <Text style={styles.addButtonText}>+ Agregar</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </LinearGradient>
+
+        {/* Search Bar */}
+        <View style={styles.searchContainer}>
+          <View style={styles.searchInputWrapper}>
+            <Text style={styles.searchIcon}>🔍</Text>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Buscar productos..."
+              placeholderTextColor="#888"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity onPress={() => setSearchQuery('')}>
+                <Text style={styles.clearIcon}>✕</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+          <TouchableOpacity
+            style={styles.sortButton}
+            onPress={() => setShowSortModal(true)}
+          >
+            <Text style={styles.sortButtonIcon}>🔀</Text>
+            <Text style={styles.sortButtonText}>{getSortLabel()}</Text>
+          </TouchableOpacity>
+        </View>
+      </Animated.View>
 
       {/* Filters */}
-      <View style={styles.filtersContainer}>
+      <Animated.View
+        style={[
+          styles.filtersContainer,
+          {
+            opacity: headerOpacity,
+            transform: [{ translateY: headerTranslateY }],
+          },
+        ]}
+      >
         <View style={styles.filtersScroll}>
           <FilterButton type="all" label="Todos" icon="📋" count={products.length} />
           <FilterButton type="active" label="Activos" icon="✅" count={activeCount} />
           <FilterButton type="inactive" label="Pausados" icon="⏸️" count={inactiveCount} />
           <FilterButton type="lowStock" label="Stock Bajo" icon="⚠️" count={lowStockCount} />
         </View>
-      </View>
+      </Animated.View>
 
       {/* Products List */}
-      <FlatList
+      <Animated.FlatList
         data={filteredProducts}
         renderItem={renderProduct}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
         refreshControl={
           <RefreshControl 
             refreshing={refreshing} 
@@ -1047,6 +1122,14 @@ const styles = StyleSheet.create({
     marginTop: 16,
     fontSize: 16,
   },
+  headerContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 1000,
+    elevation: 5,
+  },
   header: {
     paddingTop: 60,
     paddingBottom: 20,
@@ -1158,6 +1241,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: 16,
+    paddingTop: 250,
   },
   productCard: {
     marginBottom: 16,

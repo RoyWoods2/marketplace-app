@@ -15,6 +15,7 @@ import { Video, ResizeMode } from 'expo-av';
 import { useAuth } from '../context/AuthContext';
 import { formatCurrencyShort } from '../utils/currency';
 import ContactModal from '../components/ContactModal';
+import { API_ENDPOINTS } from '../config/api';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const SCREEN_HEIGHT = Dimensions.get('window').height;
@@ -62,7 +63,7 @@ export default function HomeScreen({ navigation }: any) {
   const fetchReels = async () => {
     try {
       console.log('📡 Fetching reels...');
-      const response = await fetch('http://192.168.1.120:3001/api/reels', {
+      const response = await fetch(API_ENDPOINTS.REELS, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -86,7 +87,7 @@ export default function HomeScreen({ navigation }: any) {
 
   const handleLike = async (reelId: string) => {
     try {
-      const response = await fetch(`http://192.168.1.120:3001/api/reels/${reelId}/like`, {
+      const response = await fetch(API_ENDPOINTS.REEL_LIKE(reelId), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

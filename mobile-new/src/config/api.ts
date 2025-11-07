@@ -32,6 +32,7 @@ export const API_ENDPOINTS = {
   ORDERS: `${API_BASE_URL}/api/orders`,
   ORDER_BY_ID: (id: string) => `${API_BASE_URL}/api/orders/${id}`,
   ORDER_STATUS: (id: string) => `${API_BASE_URL}/api/orders/${id}/status`,
+  ORDER_QR: (id: string) => `${API_BASE_URL}/api/orders/${id}/qr`,
   
   // Seller
   SELLER_DASHBOARD: `${API_BASE_URL}/api/seller/dashboard`,

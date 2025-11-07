@@ -65,6 +65,11 @@ export default function SellerDashboardScreen({ navigation }: any) {
   // Animaciones
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const headerOpacity = useRef(new Animated.Value(1)).current;
+  const headerTranslateY = useRef(new Animated.Value(0)).current;
+  const lastScrollY = useRef(0);
+  const scrollDirection = useRef<'up' | 'down'>('up');
 
   useEffect(() => {
     if (user) {
@@ -139,8 +144,58 @@ export default function SellerDashboardScreen({ navigation }: any) {
     setRefreshing(false);
   };
 
-  const getStatusColor = (status: string) => {
-    const colors: { [key: string]: string[] } = {
+  const handleScroll = Animated.event(
+    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+    {
+      useNativeDriver: false,
+      listener: (event: any) => {
+        const currentScrollY = event.nativeEvent.contentOffset.y;
+        const diff = currentScrollY - lastScrollY.current;
+        
+        // Determine scroll direction
+        if (diff > 0 && currentScrollY > 50) {
+          // Scrolling down and past threshold - hide header
+          if (scrollDirection.current !== 'down') {
+            scrollDirection.current = 'down';
+            Animated.parallel([
+              Animated.timing(headerOpacity, {
+                toValue: 0,
+                duration: 200,
+                useNativeDriver: true,
+              }),
+              Animated.timing(headerTranslateY, {
+                toValue: -100,
+                duration: 200,
+                useNativeDriver: true,
+              }),
+            ]).start();
+          }
+        } else if (diff < 0 || currentScrollY <= 10) {
+          // Scrolling up or at top - show header
+          if (scrollDirection.current !== 'up') {
+            scrollDirection.current = 'up';
+            Animated.parallel([
+              Animated.timing(headerOpacity, {
+                toValue: 1,
+                duration: 200,
+                useNativeDriver: true,
+              }),
+              Animated.timing(headerTranslateY, {
+                toValue: 0,
+                duration: 200,
+                useNativeDriver: true,
+              }),
+            ]).start();
+          }
+        }
+        
+        lastScrollY.current = currentScrollY;
+      },
+    }
+  );
+
+  const getStatusColor = (status: string): [string, string] => {
+    const colors: { [key: string]: [string, string] } = {
       PENDING: ['#FF9800', '#FB8C00'],
       PAYMENT_CONFIRMED: ['#2196F3', '#1976D2'],
       PREPARING: ['#9C27B0', '#7B1FA2'],
@@ -163,7 +218,7 @@ export default function SellerDashboardScreen({ navigation }: any) {
     title: string, 
     value: string | number, 
     icon: string, 
-    gradientColors: string[],
+    gradientColors: [string, string],
     onPress?: () => void
   ) => {
     const cardContent = (
@@ -282,37 +337,50 @@ export default function SellerDashboardScreen({ navigation }: any) {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <LinearGradient
-        colors={['#34C759', '#30B350', '#2A9F47']}
-        style={styles.header}
+      <Animated.View
+        style={[
+          styles.headerContainer,
+          {
+            opacity: headerOpacity,
+            transform: [{ translateY: headerTranslateY }],
+          },
+        ]}
       >
-        <View style={styles.headerContent}>
-          <View style={styles.welcomeSection}>
-            <Text style={styles.welcomeText}>¡Hola, {user?.firstName}! 👋</Text>
-            <Text style={styles.subtitle}>Aquí está tu negocio hoy</Text>
-          </View>
-          <TouchableOpacity
-            style={styles.notificationButton}
-            onPress={() => navigation.navigate('Notifications')}
-          >
-            <View style={styles.bellContainer}>
-              <Text style={styles.notificationIcon}>🔔</Text>
-              {stats?.pendingOrders && stats.pendingOrders > 0 && (
-                <View style={styles.notificationBadge}>
-                  <Text style={styles.notificationBadgeText}>{stats.pendingOrders}</Text>
-                </View>
-              )}
+        <LinearGradient
+          colors={['#34C759', '#30B350', '#2A9F47']}
+          style={styles.header}
+        >
+          <View style={styles.headerContent}>
+            <View style={styles.welcomeSection}>
+              <Text style={styles.welcomeText}>¡Hola, {user?.firstName}! 👋</Text>
+              <Text style={styles.subtitle}>Aquí está tu negocio hoy</Text>
             </View>
-          </TouchableOpacity>
-        </View>
-      </LinearGradient>
+            <TouchableOpacity
+              style={styles.notificationButton}
+              onPress={() => navigation.navigate('Notifications')}
+            >
+              <View style={styles.bellContainer}>
+                <Text style={styles.notificationIcon}>🔔</Text>
+                {stats?.pendingOrders && stats.pendingOrders > 0 && (
+                  <View style={styles.notificationBadge}>
+                    <Text style={styles.notificationBadgeText}>{stats.pendingOrders}</Text>
+                  </View>
+                )}
+              </View>
+            </TouchableOpacity>
+          </View>
+        </LinearGradient>
+      </Animated.View>
 
-      <ScrollView
+      <Animated.ScrollView
         style={styles.scrollContent}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#34C759" />
         }
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingTop: 140 }}
       >
         {/* Stats Principales */}
         <View style={styles.section}>
@@ -445,7 +513,7 @@ export default function SellerDashboardScreen({ navigation }: any) {
             Última actualización: {new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
           </Text>
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
     </View>
   );
 }
@@ -465,6 +533,14 @@ const styles = StyleSheet.create({
     marginTop: 16,
     fontSize: 16,
     color: '#fff',
+  },
+  headerContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 1000,
+    elevation: 5,
   },
   header: {
     paddingTop: 60,
