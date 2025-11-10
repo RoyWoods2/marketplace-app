@@ -178,16 +178,7 @@ export default function ProfileScreen({ navigation }: any) {
         </TouchableOpacity>
       </View>
 
-      {/* Stats */}
-      <View style={styles.statsSection}>
-        <Text style={styles.sectionTitle}>Estadísticas</Text>
-        <View style={styles.statsContainer}>
-          {renderStatCard('Productos', stats.totalProducts || 0, '📦')}
-          {renderStatCard('Órdenes', stats.totalOrders || 0, '🛒')}
-          {renderStatCard('Ventas', stats.totalSales || 0, '💰')}
-          {renderStatCard('Ingresos', `$${stats.totalRevenue || 0}`, '💵')}
-        </View>
-      </View>
+      
 
       {/* Quick Actions for Sellers */}
       {user?.userType === 'SELLER' && (

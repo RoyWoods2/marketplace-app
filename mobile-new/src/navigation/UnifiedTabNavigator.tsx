@@ -3,6 +3,7 @@ import { Text, View, StyleSheet, Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { MaterialIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
 
 // Import screens - Seller
 import SellerDashboardScreen from '../screens/SellerDashboardScreenMejor';
@@ -238,13 +239,20 @@ export default function UnifiedTabNavigator() {
         component={SellerDashboardStack}
         options={{ 
           tabBarLabel: 'Vender',
-          tabBarIcon: ({ focused }) => (
+          tabBarIcon: ({ focused, color, size }) => (
+            <Ionicons 
+              name="stats-chart" 
+              size={size} 
+              color={color} 
+            />
+          )
+          /*tabBarIcon: ({ focused }) => (
             <View style={[styles.tabIcon, focused && styles.tabIconActive]}>
               <Text style={{ fontSize: 22 }}>
                 📊
               </Text>
             </View>
-          )
+          )*/
         }}
       />
       <Tab.Screen 
@@ -252,12 +260,12 @@ export default function UnifiedTabNavigator() {
         component={SellerProductsStack}
         options={{ 
           tabBarLabel: 'Productos',
-          tabBarIcon: ({ focused }) => (
-            <View style={[styles.tabIcon, focused && styles.tabIconActive]}>
-              <Text style={{ fontSize: 22 }}>
-                📦
-              </Text>
-            </View>
+          tabBarIcon: ({ focused, color, size }) => (
+            <MaterialIcons 
+              name="inventory" 
+              size={size} 
+              color={color} 
+            />
           )
         }}
       />
@@ -266,12 +274,12 @@ export default function UnifiedTabNavigator() {
         component={SellerOrdersStack}
         options={{ 
           tabBarLabel: 'Ventas',
-          tabBarIcon: ({ focused }) => (
-            <View style={[styles.tabIcon, focused && styles.tabIconActive]}>
-              <Text style={{ fontSize: 22 }}>
-                💰
-              </Text>
-            </View>
+          tabBarIcon: ({ focused, color, size }) => (
+            <FontAwesome5
+              name="dollar-sign" 
+              size={size} 
+              color={color} 
+            />
           )
         }}
       />
@@ -282,12 +290,12 @@ export default function UnifiedTabNavigator() {
         component={BuyerHomeStack}
         options={{ 
           tabBarLabel: 'Explorar',
-          tabBarIcon: ({ focused }) => (
-            <View style={[styles.tabIcon, focused && styles.tabIconActive]}>
-              <Text style={{ fontSize: 22 }}>
-                🏠
-              </Text>
-            </View>
+          tabBarIcon: ({ focused, color, size }) => (
+            <Ionicons 
+              name="home" 
+              size={size} 
+              color={color} 
+            />
           )
         }}
       />
@@ -296,12 +304,12 @@ export default function UnifiedTabNavigator() {
         component={BuyerSearchStack}
         options={{ 
           tabBarLabel: 'Buscar',
-          tabBarIcon: ({ focused }) => (
-            <View style={[styles.tabIcon, focused && styles.tabIconActive]}>
-              <Text style={{ fontSize: 22 }}>
-                🔍
-              </Text>
-            </View>
+          tabBarIcon: ({ focused, color, size }) => (
+            <Ionicons 
+              name="search" 
+              size={size} 
+              color={color} 
+            />
           )
         }}
       />
@@ -310,12 +318,12 @@ export default function UnifiedTabNavigator() {
         component={BuyerOrdersStack}
         options={{ 
           tabBarLabel: 'Mis Compras',
-          tabBarIcon: ({ focused }) => (
-            <View style={[styles.tabIcon, focused && styles.tabIconActive]}>
-              <Text style={{ fontSize: 22 }}>
-                🛒
-              </Text>
-            </View>
+          tabBarIcon: ({ focused, color, size }) => (
+            <MaterialIcons 
+              name="shopping-cart" 
+              size={size} 
+              color={color} 
+            />
           )
         }}
       />
@@ -324,12 +332,12 @@ export default function UnifiedTabNavigator() {
         component={ProfileStack}
         options={{ 
           tabBarLabel: 'Perfil',
-          tabBarIcon: ({ focused }) => (
-            <View style={[styles.tabIcon, focused && styles.tabIconActive]}>
-              <Text style={{ fontSize: 22 }}>
-                👤
-              </Text>
-            </View>
+          tabBarIcon: ({ focused, color, size }) => (
+            <MaterialIcons 
+              name="person" 
+              size={size} 
+              color={color} 
+            />
           )
         }}
       />
