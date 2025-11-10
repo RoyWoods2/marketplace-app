@@ -12,6 +12,7 @@ import {
   ScrollView,
   RefreshControl,
 } from 'react-native';
+import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
 import { API_ENDPOINTS } from '../config/api';
@@ -264,7 +265,10 @@ export default function SearchScreen() {
 
   const renderFilters = () => (
     <ScrollView style={styles.filtersContainer} showsVerticalScrollIndicator={false}>
-      <Text style={styles.filtersTitle}>🔍 Filtros de Búsqueda</Text>
+      <View style={styles.filtersTitleContainer}>
+        <Ionicons name="filter" size={20} color="#0F1111" style={styles.filterTitleIcon} />
+        <Text style={styles.filtersTitle}>Filtros de Búsqueda</Text>
+      </View>
       
       {/* Categorías */}
       <Text style={styles.filterLabel}>Categoría:</Text>
@@ -379,7 +383,10 @@ export default function SearchScreen() {
             {/* Búsquedas Populares */}
             {popularSearches.length > 0 && (
               <View style={styles.suggestionSection}>
-                <Text style={styles.suggestionSectionTitle}>🔥 Búsquedas Populares</Text>
+                <View style={styles.suggestionTitleContainer}>
+                  <Ionicons name="flame" size={18} color="#0F1111" style={styles.suggestionIcon} />
+                  <Text style={styles.suggestionSectionTitle}>Búsquedas Populares</Text>
+                </View>
                 <View style={styles.suggestionsGrid}>
                   {popularSearches.map((search, index) => (
                     <TouchableOpacity
@@ -398,7 +405,10 @@ export default function SearchScreen() {
             {searchHistory.length > 0 && (
               <View style={styles.suggestionSection}>
                 <View style={styles.suggestionSectionHeader}>
-                  <Text style={styles.suggestionSectionTitle}>🕐 Búsquedas Recientes</Text>
+                  <View style={styles.suggestionTitleContainer}>
+                    <Ionicons name="time" size={18} color="#0F1111" style={styles.suggestionIcon} />
+                    <Text style={styles.suggestionSectionTitle}>Búsquedas Recientes</Text>
+                  </View>
                   <TouchableOpacity onPress={clearHistory}>
                     <Text style={styles.clearHistoryText}>Limpiar</Text>
                   </TouchableOpacity>
@@ -409,7 +419,7 @@ export default function SearchScreen() {
                     style={styles.historyItem}
                     onPress={() => handleQuickSearch(item)}
                   >
-                    <Text style={styles.historyIcon}>🕐</Text>
+                    <Ionicons name="time-outline" size={16} color="#565959" style={styles.historyIcon} />
                     <Text style={styles.historyText}>{item}</Text>
                     <TouchableOpacity
                       onPress={() => {
@@ -418,7 +428,7 @@ export default function SearchScreen() {
                         AsyncStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(updated));
                       }}
                     >
-                      <Text style={styles.deleteIcon}>✕</Text>
+                      <Ionicons name="close" size={18} color="#565959" />
                     </TouchableOpacity>
                   </TouchableOpacity>
                 ))}
@@ -442,7 +452,7 @@ export default function SearchScreen() {
       {/* Header de búsqueda */}
       <View style={styles.searchHeader}>
         <View style={styles.searchInputContainer}>
-          <Text style={styles.searchIcon}>🔍</Text>
+          <Ionicons name="search" size={18} color="#565959" style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
             placeholder="Buscar productos, empresas..."
@@ -464,7 +474,7 @@ export default function SearchScreen() {
                 loadProducts();
               }}
             >
-              <Text style={styles.clearIcon}>✕</Text>
+              <Ionicons name="close-circle" size={20} color="#565959" />
             </TouchableOpacity>
           )}
           {isSearching && (
@@ -475,7 +485,7 @@ export default function SearchScreen() {
           style={styles.filterToggle}
           onPress={() => setShowFilters(!showFilters)}
         >
-          <Text style={styles.filterIcon}>⚙️</Text>
+          <Ionicons name="options" size={20} color="#FFFFFF" />
           {(filters.category !== 'Todas' || filters.minPrice || filters.maxPrice || filters.companyName) && (
             <View style={styles.filterBadge}>
               <Text style={styles.filterBadgeText}>!</Text>
@@ -512,7 +522,7 @@ export default function SearchScreen() {
               </View>
             ) : products.length === 0 ? (
               <View style={styles.emptyContainer}>
-                <Text style={styles.emptyIcon}>🔍</Text>
+                <Ionicons name="search-outline" size={64} color="#565959" />
                 <Text style={styles.emptyTitle}>No se encontraron productos</Text>
                 <Text style={styles.emptySubtitle}>
                   {filters.query.trim() || filters.category !== 'Todas' || filters.minPrice || filters.maxPrice || filters.companyName
@@ -561,11 +571,18 @@ const styles = StyleSheet.create({
     borderBottomColor: '#E6E6E6',
     maxHeight: 400,
   },
+  filtersTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  filterTitleIcon: {
+    marginRight: 8,
+  },
   filtersTitle: {
     color: '#0F1111',
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 16,
   },
   filterLabel: {
     color: '#0F1111',
@@ -745,8 +762,6 @@ const styles = StyleSheet.create({
     height: 40,
   },
   searchIcon: {
-    fontSize: 18,
-    color: '#565959',
     marginRight: 8,
   },
   searchInput: {
@@ -754,12 +769,6 @@ const styles = StyleSheet.create({
     color: '#0F1111',
     fontSize: 15,
     paddingVertical: 0,
-  },
-  clearIcon: {
-    fontSize: 16,
-    color: '#565959',
-    marginLeft: 8,
-    padding: 4,
   },
   searchingIndicator: {
     marginLeft: 8,
@@ -773,10 +782,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
-  },
-  filterIcon: {
-    fontSize: 20,
-    color: '#FFFFFF',
   },
   filterBadge: {
     position: 'absolute',
@@ -812,11 +817,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
+  suggestionTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  suggestionIcon: {
+    marginRight: 6,
+  },
   suggestionSectionTitle: {
     fontSize: 16,
     fontWeight: 'bold',
     color: '#0F1111',
-    marginBottom: 12,
   },
   clearHistoryText: {
     fontSize: 14,
@@ -850,18 +862,12 @@ const styles = StyleSheet.create({
     borderBottomColor: '#F0F0F0',
   },
   historyIcon: {
-    fontSize: 16,
     marginRight: 12,
   },
   historyText: {
     flex: 1,
     fontSize: 15,
     color: '#0F1111',
-  },
-  deleteIcon: {
-    fontSize: 18,
-    color: '#565959',
-    padding: 4,
   },
   suggestionHint: {
     fontSize: 14,
@@ -893,14 +899,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 40,
   },
-  emptyIcon: {
-    fontSize: 64,
-    marginBottom: 16,
-  },
   emptyTitle: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#0F1111',
+    marginTop: 16,
     marginBottom: 8,
     textAlign: 'center',
   },

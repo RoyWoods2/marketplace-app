@@ -20,6 +20,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { API_ENDPOINTS } from '../config/api';
 import { useAuth } from '../context/AuthContext';
@@ -453,7 +454,7 @@ export default function SellerProductsScreen() {
     return sorted;
   };
 
-  const FilterButton = ({ type, label, icon, count }: { type: FilterType; label: string; icon: string; count?: number }) => {
+  const FilterButton = ({ type, label, icon, count }: { type: FilterType; label: string; icon: React.ReactNode; count?: number }) => {
     const isActive = filter === type;
     return (
       <TouchableOpacity
@@ -468,7 +469,7 @@ export default function SellerProductsScreen() {
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
           >
-            <Text style={styles.filterIcon}>{icon}</Text>
+            <View style={styles.filterIconContainer}>{icon}</View>
             <Text style={styles.filterTextActive}>{label}</Text>
             {count !== undefined && count > 0 && (
               <View style={styles.filterBadge}>
@@ -478,7 +479,7 @@ export default function SellerProductsScreen() {
           </LinearGradient>
         ) : (
           <View style={styles.filterInactive}>
-            <Text style={styles.filterIcon}>{icon}</Text>
+            <View style={styles.filterIconContainer}>{icon}</View>
             <Text style={styles.filterText}>{label}</Text>
             {count !== undefined && count > 0 && (
               <View style={[styles.filterBadge, styles.filterBadgeInactive]}>
@@ -620,7 +621,10 @@ export default function SellerProductsScreen() {
         >
           <View style={styles.headerContent}>
             <View style={styles.headerLeft}>
-              <Text style={styles.headerTitle}>📦 Mis Productos</Text>
+              <View style={styles.headerTitleContainer}>
+                <MaterialIcons name="inventory" size={24} color="#FFFFFF" style={styles.headerTitleIcon} />
+                <Text style={styles.headerTitle}>Mis Productos</Text>
+              </View>
               <Text style={styles.headerSubtitle}>{products.length} producto{products.length !== 1 ? 's' : ''} total{products.length !== 1 ? 'es' : ''}</Text>
             </View>
             <View style={styles.headerActions}>
@@ -628,7 +632,7 @@ export default function SellerProductsScreen() {
                 style={styles.headerActionButton}
                 onPress={() => setShowStatsModal(true)}
               >
-                <Text style={styles.headerActionIcon}>📊</Text>
+                <Ionicons name="stats-chart" size={24} color="#FFFFFF" />
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.addButton}
@@ -648,7 +652,7 @@ export default function SellerProductsScreen() {
         {/* Search Bar */}
         <View style={styles.searchContainer}>
           <View style={styles.searchInputWrapper}>
-            <Text style={styles.searchIcon}>🔍</Text>
+            <Ionicons name="search" size={20} color="#888" style={styles.searchIcon} />
             <TextInput
               style={styles.searchInput}
               placeholder="Buscar productos..."
@@ -658,7 +662,7 @@ export default function SellerProductsScreen() {
             />
             {searchQuery.length > 0 && (
               <TouchableOpacity onPress={() => setSearchQuery('')}>
-                <Text style={styles.clearIcon}>✕</Text>
+                <Ionicons name="close-circle" size={20} color="#888" />
               </TouchableOpacity>
             )}
           </View>
@@ -666,7 +670,7 @@ export default function SellerProductsScreen() {
             style={styles.sortButton}
             onPress={() => setShowSortModal(true)}
           >
-            <Text style={styles.sortButtonIcon}>🔀</Text>
+            <Ionicons name="swap-vertical" size={20} color="#FFFFFF" style={styles.sortButtonIcon} />
             <Text style={styles.sortButtonText}>{getSortLabel()}</Text>
           </TouchableOpacity>
         </View>
@@ -683,10 +687,10 @@ export default function SellerProductsScreen() {
         ]}
       >
         <View style={styles.filtersScroll}>
-          <FilterButton type="all" label="Todos" icon="📋" count={products.length} />
-          <FilterButton type="active" label="Activos" icon="✅" count={activeCount} />
-          <FilterButton type="inactive" label="Pausados" icon="⏸️" count={inactiveCount} />
-          <FilterButton type="lowStock" label="Stock Bajo" icon="⚠️" count={lowStockCount} />
+          <FilterButton type="all" label="Todos" icon={<MaterialIcons name="list" size={18} color="currentColor" />} count={products.length} />
+          <FilterButton type="active" label="Activos" icon={<Ionicons name="checkmark-circle" size={18} color="currentColor" />} count={activeCount} />
+          <FilterButton type="inactive" label="Pausados" icon={<Ionicons name="pause-circle" size={18} color="currentColor" />} count={inactiveCount} />
+          <FilterButton type="lowStock" label="Stock Bajo" icon={<Ionicons name="warning" size={18} color="currentColor" />} count={lowStockCount} />
         </View>
       </Animated.View>
 
@@ -707,8 +711,8 @@ export default function SellerProductsScreen() {
         }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyIcon}>📦</Text>
-            <Text style={styles.emptyTitle}>
+            <MaterialIcons name="inventory-2" size={64} color="#999" />
+            <Text style={[styles.emptyTitle, { marginTop: 16 }]}>
               {filter === 'all' ? 'No tienes productos' : 'No hay productos en esta categoría'}
             </Text>
             <Text style={styles.emptySubtitle}>
@@ -1210,8 +1214,8 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  filterIcon: {
-    fontSize: 14,
+  filterIconContainer: {
+    marginRight: 6,
   },
   filterText: {
     color: '#888',
@@ -1347,10 +1351,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 60,
     paddingHorizontal: 40,
-  },
-  emptyIcon: {
-    fontSize: 64,
-    marginBottom: 16,
   },
   emptyTitle: {
     fontSize: 20,
@@ -1545,8 +1545,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerActionIcon: {
-    fontSize: 20,
+  headerTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerTitleIcon: {
+    marginRight: 8,
   },
   searchContainer: {
     flexDirection: 'row',
@@ -1566,18 +1570,12 @@ const styles = StyleSheet.create({
     height: 44,
   },
   searchIcon: {
-    fontSize: 18,
     marginRight: 8,
   },
   searchInput: {
     flex: 1,
     color: '#fff',
     fontSize: 15,
-  },
-  clearIcon: {
-    color: '#888',
-    fontSize: 18,
-    padding: 4,
   },
   sortButton: {
     flexDirection: 'row',
@@ -1590,7 +1588,6 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(102, 126, 234, 0.3)',
   },
   sortButtonIcon: {
-    fontSize: 16,
     marginRight: 6,
   },
   sortButtonText: {

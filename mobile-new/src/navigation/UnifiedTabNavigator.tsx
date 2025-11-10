@@ -246,13 +246,6 @@ export default function UnifiedTabNavigator() {
               color={color} 
             />
           )
-          /*tabBarIcon: ({ focused }) => (
-            <View style={[styles.tabIcon, focused && styles.tabIconActive]}>
-              <Text style={{ fontSize: 22 }}>
-                📊
-              </Text>
-            </View>
-          )*/
         }}
       />
       <Tab.Screen 
@@ -345,16 +338,4 @@ export default function UnifiedTabNavigator() {
   );
 }
 
-const styles = StyleSheet.create({
-  tabIcon: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-  },
-  tabIconActive: {
-    backgroundColor: 'rgba(52, 199, 89, 0.2)',
-  },
-});
 

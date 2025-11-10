@@ -13,6 +13,7 @@ import {
   Animated,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { API_ENDPOINTS } from '../config/api';
 import { useAuth } from '../context/AuthContext';
 import Card from '../components/Card';
@@ -217,7 +218,7 @@ export default function SellerDashboardScreen({ navigation }: any) {
   const renderStatCard = (
     title: string, 
     value: string | number, 
-    icon: string, 
+    icon: React.ReactNode, 
     gradientColors: [string, string],
     onPress?: () => void
   ) => {
@@ -239,7 +240,7 @@ export default function SellerDashboardScreen({ navigation }: any) {
         >
           <View style={styles.statHeader}>
             <View style={styles.statIconContainer}>
-              <Text style={styles.statIcon}>{icon}</Text>
+              {icon}
             </View>
             <Text style={styles.statTitle}>{title}</Text>
           </View>
@@ -352,7 +353,7 @@ export default function SellerDashboardScreen({ navigation }: any) {
         >
           <View style={styles.headerContent}>
             <View style={styles.welcomeSection}>
-              <Text style={styles.welcomeText}>¡Hola, {user?.firstName}! 👋</Text>
+              <Text style={styles.welcomeText}>¡Hola, {user?.firstName}!</Text>
               <Text style={styles.subtitle}>Aquí está tu negocio hoy</Text>
             </View>
             <TouchableOpacity
@@ -360,7 +361,7 @@ export default function SellerDashboardScreen({ navigation }: any) {
               onPress={() => navigation.navigate('Notifications')}
             >
               <View style={styles.bellContainer}>
-                <Text style={styles.notificationIcon}>🔔</Text>
+                <Ionicons name="notifications" size={24} color="#FFFFFF" />
                 {stats?.pendingOrders && stats.pendingOrders > 0 && (
                   <View style={styles.notificationBadge}>
                     <Text style={styles.notificationBadgeText}>{stats.pendingOrders}</Text>
@@ -384,19 +385,22 @@ export default function SellerDashboardScreen({ navigation }: any) {
       >
         {/* Stats Principales */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📊 Estadísticas</Text>
+          <View style={styles.sectionTitleContainer}>
+            <Ionicons name="stats-chart" size={20} color="#1a1a2e" style={styles.sectionTitleIcon} />
+            <Text style={styles.sectionTitle}>Estadísticas</Text>
+          </View>
           <View style={styles.statsGrid}>
             {renderStatCard(
               'Ventas', 
               stats?.totalSales || 0, 
-              '📈', 
+              <Ionicons name="trending-up" size={28} color="#FFFFFF" />, 
               ['#34C759', '#30B350'],
               () => navigation.navigate('SalesHistory', { timeframe: 'all' })
             )}
             {renderStatCard(
               'Ingresos', 
               `${formatCurrencyShort(stats?.totalRevenue || 0)} CLP`, 
-              '💰', 
+              <MaterialIcons name="attach-money" size={28} color="#FFFFFF" />, 
               ['#FFD60A', '#FFA500'],
               () => navigation.navigate('Income', { timeframe: 'all' })
             )}
@@ -405,14 +409,14 @@ export default function SellerDashboardScreen({ navigation }: any) {
             {renderStatCard(
               'Pendientes', 
               stats?.pendingOrders || 0, 
-              '⏳', 
+              <Ionicons name="time" size={28} color="#FFFFFF" />, 
               ['#FF9800', '#FB8C00'],
               () => navigation.navigate('PendingOrders')
             )}
             {renderStatCard(
               'Stock Bajo', 
               stats?.lowStockProducts || 0, 
-              '⚠️', 
+              <Ionicons name="warning" size={28} color="#FFFFFF" />, 
               ['#FF3B30', '#FF2D20'],
               () => navigation.navigate('LowStockProducts')
             )}
@@ -421,7 +425,10 @@ export default function SellerDashboardScreen({ navigation }: any) {
 
         {/* Acciones Rápidas */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>⚡ Acciones Rápidas</Text>
+          <View style={styles.sectionTitleContainer}>
+            <Ionicons name="flash" size={20} color="#1a1a2e" style={styles.sectionTitleIcon} />
+            <Text style={styles.sectionTitle}>Acciones Rápidas</Text>
+          </View>
           <View style={styles.actionsGrid}>
             <TouchableOpacity
               style={styles.actionButton}
@@ -432,7 +439,7 @@ export default function SellerDashboardScreen({ navigation }: any) {
                 colors={['rgba(52, 199, 89, 0.1)', 'rgba(52, 199, 89, 0.2)']}
                 style={styles.actionGradient}
               >
-                <Text style={styles.actionIcon}>📦</Text>
+                <MaterialIcons name="inventory" size={32} color="#34C759" />
                 <Text style={styles.actionText}>Productos</Text>
               </LinearGradient>
             </TouchableOpacity>
@@ -446,7 +453,7 @@ export default function SellerDashboardScreen({ navigation }: any) {
                 colors={['rgba(102, 126, 234, 0.1)', 'rgba(102, 126, 234, 0.2)']}
                 style={styles.actionGradient}
               >
-                <Text style={styles.actionIcon}>🛒</Text>
+                <MaterialIcons name="shopping-cart" size={32} color="#667eea" />
                 <Text style={styles.actionText}>Órdenes</Text>
               </LinearGradient>
             </TouchableOpacity>
@@ -460,7 +467,7 @@ export default function SellerDashboardScreen({ navigation }: any) {
                 colors={['rgba(255, 215, 10, 0.1)', 'rgba(255, 215, 10, 0.2)']}
                 style={styles.actionGradient}
               >
-                <Text style={styles.actionIcon}>📊</Text>
+                <Ionicons name="document-text" size={32} color="#FFD60A" />
                 <Text style={styles.actionText}>Reportes</Text>
               </LinearGradient>
             </TouchableOpacity>
@@ -474,7 +481,7 @@ export default function SellerDashboardScreen({ navigation }: any) {
                 colors={['rgba(240, 147, 251, 0.1)', 'rgba(240, 147, 251, 0.2)']}
                 style={styles.actionGradient}
               >
-                <Text style={styles.actionIcon}>⚙️</Text>
+                <Ionicons name="settings" size={32} color="#f093fb" />
                 <Text style={styles.actionText}>Ajustes</Text>
               </LinearGradient>
             </TouchableOpacity>
@@ -485,7 +492,10 @@ export default function SellerDashboardScreen({ navigation }: any) {
         {recentProducts.length > 0 && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>📦 Productos Recientes</Text>
+              <View style={styles.sectionTitleContainer}>
+                <MaterialIcons name="inventory" size={20} color="#1a1a2e" style={styles.sectionTitleIcon} />
+                <Text style={styles.sectionTitle}>Productos Recientes</Text>
+              </View>
               <TouchableOpacity onPress={() => navigation.navigate('Products')}>
                 <Text style={styles.seeAllText}>Ver todos →</Text>
               </TouchableOpacity>
@@ -498,7 +508,10 @@ export default function SellerDashboardScreen({ navigation }: any) {
         {recentOrders.length > 0 && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>🛒 Órdenes Recientes</Text>
+              <View style={styles.sectionTitleContainer}>
+                <MaterialIcons name="shopping-cart" size={20} color="#1a1a2e" style={styles.sectionTitleIcon} />
+                <Text style={styles.sectionTitle}>Órdenes Recientes</Text>
+              </View>
               <TouchableOpacity onPress={() => navigation.navigate('Orders')}>
                 <Text style={styles.seeAllText}>Ver todas →</Text>
               </TouchableOpacity>
@@ -611,11 +624,18 @@ const styles = StyleSheet.create({
   section: {
     padding: 20,
   },
+  sectionTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  sectionTitleIcon: {
+    marginRight: 8,
+  },
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 16,
+    color: '#1a1a2e',
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -658,9 +678,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 8,
   },
-  statIcon: {
-    fontSize: 18,
-  },
   statTitle: {
     fontSize: 13,
     color: 'rgba(255, 255, 255, 0.9)',
@@ -693,15 +710,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 16,
-  },
-  actionIcon: {
-    fontSize: 36,
-    marginBottom: 8,
+    gap: 8,
   },
   actionText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#fff',
+    color: '#1a1a2e',
   },
   productCard: {
     marginBottom: 12,

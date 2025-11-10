@@ -23,6 +23,7 @@ import Card from '../components/Card';
 import GradientButton from '../components/GradientButton';
 import QRCodeSimple from '../components/QRCodeSimple';
 import { formatCurrencyShort } from '../utils/currency';
+import { MaterialIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons'
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -532,14 +533,15 @@ export default function SellerOrdersScreen({ navigation }: any) {
         >
           <View style={styles.headerContent}>
             <View style={styles.headerLeft}>
-              <Text style={styles.headerTitle}>🛒 Mis Órdenes</Text>
+              <MaterialIcons name="shopping-cart" size={24} color="#FFFFFF" />
+              <Text style={styles.headerTitle}>Mis Órdenes</Text>
               <Text style={styles.headerSubtitle}>{orders.length} orden{orders.length !== 1 ? 'es' : ''} total{orders.length !== 1 ? 'es' : ''}</Text>
             </View>
             <TouchableOpacity
               style={styles.headerActionButton}
               onPress={() => setShowStatsModal(true)}
             >
-              <Text style={styles.headerActionIcon}>📊</Text>
+              <Ionicons name="stats-chart" size={24} color="#FFFFFF" />
             </TouchableOpacity>
           </View>
         </LinearGradient>
@@ -547,7 +549,7 @@ export default function SellerOrdersScreen({ navigation }: any) {
         {/* Search Bar */}
         <View style={styles.searchContainer}>
           <View style={styles.searchInputWrapper}>
-            <Text style={styles.searchIcon}>🔍</Text>
+            <Ionicons name="search" size={24} color="#888" />
             <TextInput
               style={styles.searchInput}
               placeholder="Buscar por cliente, producto, código..."
@@ -557,7 +559,7 @@ export default function SellerOrdersScreen({ navigation }: any) {
             />
             {searchQuery.length > 0 && (
               <TouchableOpacity onPress={() => setSearchQuery('')}>
-                <Text style={styles.clearIcon}>✕</Text>
+                <Ionicons name="close" size={24} color="#888" />
               </TouchableOpacity>
             )}
           </View>
@@ -565,7 +567,7 @@ export default function SellerOrdersScreen({ navigation }: any) {
             style={styles.sortButton}
             onPress={() => setShowSortModal(true)}
           >
-            <Text style={styles.sortButtonIcon}>🔀</Text>
+            <Ionicons name="swap-vertical" size={24} color="#888" />
             <Text style={styles.sortButtonText}>{getSortLabel()}</Text>
           </TouchableOpacity>
         </View>
@@ -576,12 +578,13 @@ export default function SellerOrdersScreen({ navigation }: any) {
         <View style={styles.summaryContainer}>
           <Card style={styles.summaryCard}>
             <View style={styles.summaryHeader}>
-              <Text style={styles.summaryTitle}>📊 Resumen de Hoy</Text>
+              <MaterialIcons name="analytics" size={24} color="#FFFFFF" />
+              <Text style={styles.summaryTitle}>Resumen de Hoy</Text>
               <TouchableOpacity
                 style={styles.summaryCloseButton}
                 onPress={() => setShowSummary(false)}
               >
-                <Text style={styles.summaryCloseIcon}>✕</Text>
+                <Ionicons name="close" size={24} color="#888" />
               </TouchableOpacity>
             </View>
             <View style={styles.summaryGrid}>
@@ -608,7 +611,7 @@ export default function SellerOrdersScreen({ navigation }: any) {
             style={styles.summaryShowButton}
             onPress={() => setShowSummary(true)}
           >
-            <Text style={styles.summaryShowIcon}>📊</Text>
+            <MaterialIcons name="analytics" size={24} color="#FFFFFF" />
             <Text style={styles.summaryShowText}>Mostrar Resumen de Hoy</Text>
           </TouchableOpacity>
         </View>
@@ -625,11 +628,11 @@ export default function SellerOrdersScreen({ navigation }: any) {
         ]}
       >
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filtersScroll}>
-          <FilterButton type="all" label="Todas" icon="📋" count={orders.length} />
-          <FilterButton type="pending" label="Pendientes" icon="⏳" count={pendingCount} />
-          <FilterButton type="preparing" label="Preparando" icon="📦" count={preparingCount} />
-          <FilterButton type="ready" label="Listas" icon="✅" count={readyCount} />
-          <FilterButton type="delivered" label="Entregadas" icon="✅" count={deliveredCount} />
+          <FilterButton type="all" label="Todas" icon={<Ionicons name="list" size={24} color="#888" />} count={orders.length} />
+          <FilterButton type="pending" label="Pendientes" icon={<Ionicons name="time" size={24} color="#888" />} count={pendingCount} />
+          <FilterButton type="preparing" label="Preparando" icon={<MaterialIcons name="warehouse" size={24} color="#888" />} count={preparingCount} />
+          <FilterButton type="ready" label="Listas" icon={<MaterialIcons name="check-circle" size={24} color="#888" />} count={readyCount} />
+          <FilterButton type="delivered" label="Entregadas" icon={<MaterialIcons name="check-circle" size={24} color="#888" />} count={deliveredCount} />
         </ScrollView>
       </Animated.View>
 
@@ -650,7 +653,7 @@ export default function SellerOrdersScreen({ navigation }: any) {
         }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyIcon}>🛒</Text>
+            <MaterialIcons name="shopping-cart" size={64} color="#999" />
             <Text style={styles.emptyTitle}>
               {filter === 'all' ? 'No tienes órdenes' : 'No hay órdenes en esta categoría'}
             </Text>

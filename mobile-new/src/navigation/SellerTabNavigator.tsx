@@ -3,6 +3,7 @@ import { Text, View, StyleSheet, Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { MaterialIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
 
 // Import screens
 import SellerDashboardScreen from '../screens/SellerDashboardScreenMejor';
@@ -107,12 +108,12 @@ export default function SellerTabNavigator() {
         component={DashboardStack}
         options={{ 
           tabBarLabel: 'Dashboard',
-          tabBarIcon: ({ focused }) => (
-            <View style={[styles.tabIcon, focused && styles.tabIconActive]}>
-              <Text style={{ fontSize: 22 }}>
-                📊
-              </Text>
-            </View>
+          tabBarIcon: ({ focused, color, size }) => (
+            <Ionicons 
+              name="stats-chart" 
+              size={size} 
+              color={color} 
+            />
           )
         }}
       />
@@ -121,12 +122,12 @@ export default function SellerTabNavigator() {
         component={ProductsStack}
         options={{ 
           tabBarLabel: 'Productos',
-          tabBarIcon: ({ focused }) => (
-            <View style={[styles.tabIcon, focused && styles.tabIconActive]}>
-              <Text style={{ fontSize: 22 }}>
-                📦
-              </Text>
-            </View>
+          tabBarIcon: ({ focused, color, size }) => (
+            <MaterialIcons 
+              name="inventory" 
+              size={size} 
+              color={color} 
+            />
           )
         }}
       />
@@ -135,12 +136,12 @@ export default function SellerTabNavigator() {
         component={OrdersStack}
         options={{ 
           tabBarLabel: 'Órdenes',
-          tabBarIcon: ({ focused }) => (
-            <View style={[styles.tabIcon, focused && styles.tabIconActive]}>
-              <Text style={{ fontSize: 22 }}>
-                🛒
-              </Text>
-            </View>
+          tabBarIcon: ({ focused, color, size }) => (
+            <MaterialIcons 
+              name="shopping-cart" 
+              size={size} 
+              color={color} 
+            />
           )
         }}
       />
@@ -149,12 +150,12 @@ export default function SellerTabNavigator() {
         component={ProfileStack}
         options={{ 
           tabBarLabel: 'Perfil',
-          tabBarIcon: ({ focused }) => (
-            <View style={[styles.tabIcon, focused && styles.tabIconActive]}>
-              <Text style={{ fontSize: 22 }}>
-                👤
-              </Text>
-            </View>
+          tabBarIcon: ({ focused, color, size }) => (
+            <MaterialIcons 
+              name="person" 
+              size={size} 
+              color={color} 
+            />
           )
         }}
       />
@@ -162,15 +163,3 @@ export default function SellerTabNavigator() {
   );
 }
 
-const styles = StyleSheet.create({
-  tabIcon: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-  },
-  tabIconActive: {
-    backgroundColor: 'rgba(52, 199, 89, 0.2)',
-  },
-});

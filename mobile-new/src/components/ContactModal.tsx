@@ -8,6 +8,7 @@ import {
   Alert,
   Linking,
 } from 'react-native';
+import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 
 interface User {
   id: string;
@@ -79,7 +80,7 @@ export default function ContactModal({ visible, user, onClose }: ContactModalPro
           <View style={styles.header}>
             <Text style={styles.title}>Contactar a {user.firstName}</Text>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <Text style={styles.closeText}>✕</Text>
+              <Ionicons name="close" size={24} color="#666" />
             </TouchableOpacity>
           </View>
 
@@ -99,13 +100,13 @@ export default function ContactModal({ visible, user, onClose }: ContactModalPro
                 style={styles.whatsappButton}
                 onPress={() => handleContactWhatsApp(user.whatsapp)}
               >
-                <Text style={styles.buttonIcon}>💬</Text>
+                <FontAwesome5 name="whatsapp" size={32} color="#FFFFFF" style={styles.buttonIcon} />
                 <Text style={styles.buttonText}>WhatsApp</Text>
                 <Text style={styles.buttonSubtext}>{user.whatsapp}</Text>
               </TouchableOpacity>
             ) : (
               <View style={styles.unavailableButton}>
-                <Text style={styles.unavailableIcon}>💬</Text>
+                <FontAwesome5 name="whatsapp" size={32} color="#999" style={styles.unavailableIcon} />
                 <Text style={styles.unavailableText}>WhatsApp no disponible</Text>
               </View>
             )}
@@ -115,13 +116,13 @@ export default function ContactModal({ visible, user, onClose }: ContactModalPro
                 style={styles.instagramButton}
                 onPress={() => handleContactInstagram(user.instagram)}
               >
-                <Text style={styles.buttonIcon}>📷</Text>
+                <FontAwesome5 name="instagram" size={32} color="#FFFFFF" style={styles.buttonIcon} />
                 <Text style={styles.buttonText}>Instagram</Text>
                 <Text style={styles.buttonSubtext}>@{user.instagram}</Text>
               </TouchableOpacity>
             ) : (
               <View style={styles.unavailableButton}>
-                <Text style={styles.unavailableIcon}>📷</Text>
+                <FontAwesome5 name="instagram" size={32} color="#999" style={styles.unavailableIcon} />
                 <Text style={styles.unavailableText}>Instagram no disponible</Text>
               </View>
             )}
@@ -168,10 +169,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  closeText: {
-    fontSize: 16,
-    color: '#666',
-  },
   userInfo: {
     alignItems: 'center',
     marginBottom: 30,
@@ -211,7 +208,6 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   buttonIcon: {
-    fontSize: 24,
     marginBottom: 10,
   },
   buttonText: {
@@ -233,7 +229,6 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   unavailableIcon: {
-    fontSize: 24,
     marginBottom: 10,
     opacity: 0.5,
   },

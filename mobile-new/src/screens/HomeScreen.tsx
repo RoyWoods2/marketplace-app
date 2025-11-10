@@ -12,6 +12,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Video, ResizeMode } from 'expo-av';
+import { MaterialIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { formatCurrencyShort } from '../utils/currency';
 import ContactModal from '../components/ContactModal';
@@ -234,7 +235,7 @@ export default function HomeScreen({ navigation }: any) {
           onPress={() => handleLike(item.id)}
         >
           <View style={styles.actionButtonContainer}>
-            <Text style={styles.actionIcon}>❤️</Text>
+            <Ionicons name="heart" size={20} color="#FF3040" />
             <Text style={styles.actionText}>{item.likes}</Text>
           </View>
         </TouchableOpacity>
@@ -242,7 +243,7 @@ export default function HomeScreen({ navigation }: any) {
         {/* Views Counter */}
         <View style={styles.actionButton}>
           <View style={styles.actionButtonContainer}>
-            <Text style={styles.actionIcon}>👁️</Text>
+            <Ionicons name="eye" size={20} color="#FFFFFF" />
             <Text style={styles.actionText}>{item.views}</Text>
           </View>
         </View>
@@ -254,7 +255,7 @@ export default function HomeScreen({ navigation }: any) {
             onPress={() => handleContactWhatsApp(item.user.whatsapp || '', item.product)}
           >
             <View style={styles.actionButtonContainer}>
-              <Text style={styles.actionIcon}>💬</Text>
+              <FontAwesome5 name="whatsapp" size={20} color="#25D366" />
             </View>
           </TouchableOpacity>
         )}
@@ -266,7 +267,7 @@ export default function HomeScreen({ navigation }: any) {
             onPress={() => handleContactInstagram(item.user.instagram || '')}
           >
             <View style={styles.actionButtonContainer}>
-              <Text style={styles.actionIcon}>📷</Text>
+              <FontAwesome5 name="instagram" size={20} color="#E4405F" />
             </View>
           </TouchableOpacity>
         )}
@@ -277,7 +278,7 @@ export default function HomeScreen({ navigation }: any) {
           onPress={() => Alert.alert('Compartir', 'Función de compartir próximamente')}
         >
           <View style={styles.actionButtonContainer}>
-            <Text style={styles.actionIcon}>📤</Text>
+            <Ionicons name="share-social" size={20} color="#FFFFFF" />
           </View>
         </TouchableOpacity>
 
@@ -314,7 +315,8 @@ export default function HomeScreen({ navigation }: any) {
   if (reels.length === 0) {
     return (
       <View style={styles.emptyContainer}>
-        <Text style={styles.emptyTitle}>📱 No hay reels disponibles</Text>
+        <Ionicons name="videocam-outline" size={64} color="#888" />
+        <Text style={styles.emptyTitle}>No hay reels disponibles</Text>
         <Text style={styles.emptySubtitle}>Próximamente más contenido</Text>
       </View>
     );
@@ -371,6 +373,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: '#fff',
+    marginTop: 16,
     marginBottom: 10,
     textAlign: 'center',
   },
@@ -481,10 +484,7 @@ const styles = StyleSheet.create({
     backdropFilter: 'blur(10px)',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.2)',
-  },
-  actionIcon: {
-    fontSize: 20,
-    marginBottom: 2,
+    gap: 4,
   },
   actionText: {
     color: '#fff',

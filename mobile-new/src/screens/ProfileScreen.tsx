@@ -9,6 +9,7 @@ import {
   Alert,
   RefreshControl,
 } from 'react-native';
+import { MaterialIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { API_ENDPOINTS } from '../config/api';
 
@@ -118,13 +119,13 @@ export default function ProfileScreen({ navigation }: any) {
     </View>
   );
 
-  const renderMenuButton = (title: string, icon: string, onPress: () => void, showArrow: boolean = true) => (
+  const renderMenuButton = (title: string, icon: React.ReactNode, onPress: () => void, showArrow: boolean = true) => (
     <TouchableOpacity style={styles.menuButton} onPress={onPress}>
       <View style={styles.menuButtonLeft}>
-        <Text style={styles.menuIcon}>{icon}</Text>
+        <View style={styles.menuIconContainer}>{icon}</View>
         <Text style={styles.menuTitle}>{title}</Text>
       </View>
-      {showArrow && <Text style={styles.menuArrow}>›</Text>}
+      {showArrow && <Ionicons name="chevron-forward" size={20} color="#999" />}
     </TouchableOpacity>
   );
 
@@ -156,7 +157,7 @@ export default function ProfileScreen({ navigation }: any) {
             style={styles.avatar}
           />
           <TouchableOpacity style={styles.editAvatarButton}>
-            <Text style={styles.editAvatarText}>📷</Text>
+            <Ionicons name="camera" size={20} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
 
@@ -189,7 +190,7 @@ export default function ProfileScreen({ navigation }: any) {
               style={styles.quickActionButton}
               onPress={() => navigation.getParent()?.navigate('SellerOrders')}
             >
-              <Text style={styles.quickActionIcon}>📋</Text>
+              <MaterialIcons name="assignment" size={24} color="#34C759" />
               <Text style={styles.quickActionText}>Mis Órdenes</Text>
             </TouchableOpacity>
             
@@ -197,7 +198,7 @@ export default function ProfileScreen({ navigation }: any) {
               style={styles.quickActionButton}
               onPress={() => navigation.getParent()?.navigate('SellerProducts')}
             >
-              <Text style={styles.quickActionIcon}>📦</Text>
+              <MaterialIcons name="inventory" size={24} color="#34C759" />
               <Text style={styles.quickActionText}>Mis Productos</Text>
             </TouchableOpacity>
             
@@ -205,7 +206,7 @@ export default function ProfileScreen({ navigation }: any) {
               style={styles.quickActionButton}
               onPress={handleNotifications}
             >
-              <Text style={styles.quickActionIcon}>🔔</Text>
+              <Ionicons name="notifications" size={24} color="#34C759" />
               <Text style={styles.quickActionText}>Notificaciones</Text>
             </TouchableOpacity>
           </View>
@@ -219,19 +220,19 @@ export default function ProfileScreen({ navigation }: any) {
           <View style={styles.contactContainer}>
             {profile?.phone && (
               <View style={styles.contactItem}>
-                <Text style={styles.contactIcon}>📞</Text>
+                <Ionicons name="call" size={20} color="#34C759" style={styles.contactIcon} />
                 <Text style={styles.contactText}>{profile.phone}</Text>
               </View>
             )}
             {profile?.whatsapp && (
               <View style={styles.contactItem}>
-                <Text style={styles.contactIcon}>💬</Text>
+                <FontAwesome5 name="whatsapp" size={20} color="#25D366" style={styles.contactIcon} />
                 <Text style={styles.contactText}>{profile.whatsapp}</Text>
               </View>
             )}
             {profile?.instagram && (
               <View style={styles.contactItem}>
-                <Text style={styles.contactIcon}>📷</Text>
+                <FontAwesome5 name="instagram" size={20} color="#E4405F" style={styles.contactIcon} />
                 <Text style={styles.contactText}>@{profile.instagram}</Text>
               </View>
             )}
@@ -243,11 +244,11 @@ export default function ProfileScreen({ navigation }: any) {
       <View style={styles.menuSection}>
         <Text style={styles.sectionTitle}>Configuración</Text>
         <View style={styles.menuContainer}>
-          {renderMenuButton('Notificaciones', '🔔', handleNotifications)}
-          {renderMenuButton('Prueba Notificaciones', '🧪', () => navigation.navigate('TestNotifications'))}
-          {renderMenuButton('Configuración', '⚙️', handleSettings)}
-          {renderMenuButton('Ayuda y Soporte', '❓', () => Alert.alert('Ayuda', 'Soporte próximamente'))}
-          {renderMenuButton('Acerca de', 'ℹ️', () => Alert.alert('Acerca de', 'Marketplace v1.0'))}
+          {renderMenuButton('Notificaciones', <Ionicons name="notifications" size={24} color="#34C759" />, handleNotifications)}
+          {renderMenuButton('Prueba Notificaciones', <Ionicons name="flask" size={24} color="#34C759" />, () => navigation.navigate('TestNotifications'))}
+          {renderMenuButton('Configuración', <Ionicons name="settings" size={24} color="#34C759" />, handleSettings)}
+          {renderMenuButton('Ayuda y Soporte', <Ionicons name="help-circle" size={24} color="#34C759" />, () => Alert.alert('Ayuda', 'Soporte próximamente'))}
+          {renderMenuButton('Acerca de', <Ionicons name="information-circle" size={24} color="#34C759" />, () => Alert.alert('Acerca de', 'Marketplace v1.0'))}
         </View>
       </View>
 
@@ -435,10 +436,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
-  },
-  quickActionIcon: {
-    fontSize: 24,
-    marginBottom: 8,
+    gap: 8,
   },
   quickActionText: {
     fontSize: 12,
@@ -466,9 +464,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   contactIcon: {
-    fontSize: 20,
     marginRight: 12,
-    width: 24,
   },
   contactText: {
     fontSize: 16,
@@ -501,19 +497,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
   },
-  menuIcon: {
-    fontSize: 20,
+  menuIconContainer: {
     marginRight: 12,
     width: 24,
+    alignItems: 'center',
   },
   menuTitle: {
     fontSize: 16,
     color: '#333',
     flex: 1,
-  },
-  menuArrow: {
-    fontSize: 20,
-    color: '#ccc',
   },
   logoutSection: {
     margin: 16,
