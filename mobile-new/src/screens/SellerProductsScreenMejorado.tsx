@@ -494,19 +494,19 @@ export default function SellerProductsScreen() {
                   style={[styles.actionButton, styles.actionButtonSmall]}
                   onPress={() => handlePreviewProduct(item)}
                 >
-                  <Ionicons name="eye" size={18} color="#0a0a0f" />
+                  <Ionicons name="eye" size={18} color="#FFFFFF" />
                 </TouchableOpacity>
-                <TouchableOpacity
+                {/* <TouchableOpacity
                   style={[styles.actionButton, styles.actionButtonSmall]}
                   onPress={() => handleDuplicateProduct(item)}
                 >
                   <Ionicons name="copy-outline" size={18} color="#0a0a0f" />
-                </TouchableOpacity>
+                </TouchableOpacity> */}
                 <TouchableOpacity
                   style={styles.actionButton}
                   onPress={() => handleEditProduct(item)}
                 >
-                  <Ionicons name="create-outline" size={18} color="#0a0a0f" />
+                  <Ionicons name="create-outline" size={18} color="#FFFFFF" />
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.actionButton, styles.actionButtonSecondary]}
@@ -515,7 +515,7 @@ export default function SellerProductsScreen() {
                   <Ionicons
                     name={item.isActive ? 'pause' : 'play'}
                     size={18}
-                    color={item.isActive ? '#0a0a0f' : '#0a0a0f'}
+                    color={item.isActive ? '#FFFFFF' : '#FFFFFF'}
                   />
                 </TouchableOpacity>
               </View>
