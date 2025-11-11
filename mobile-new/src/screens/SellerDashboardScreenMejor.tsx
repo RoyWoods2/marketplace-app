@@ -66,11 +66,6 @@ export default function SellerDashboardScreen({ navigation }: any) {
   // Animaciones
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
-  const scrollY = useRef(new Animated.Value(0)).current;
-  const headerOpacity = useRef(new Animated.Value(1)).current;
-  const headerTranslateY = useRef(new Animated.Value(0)).current;
-  const lastScrollY = useRef(0);
-  const scrollDirection = useRef<'up' | 'down'>('up');
 
   useEffect(() => {
     if (user) {
@@ -144,56 +139,6 @@ export default function SellerDashboardScreen({ navigation }: any) {
     await fetchDashboardData();
     setRefreshing(false);
   };
-
-  const handleScroll = Animated.event(
-    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-    {
-      useNativeDriver: false,
-      listener: (event: any) => {
-        const currentScrollY = event.nativeEvent.contentOffset.y;
-        const diff = currentScrollY - lastScrollY.current;
-        
-        // Determine scroll direction
-        if (diff > 0 && currentScrollY > 50) {
-          // Scrolling down and past threshold - hide header
-          if (scrollDirection.current !== 'down') {
-            scrollDirection.current = 'down';
-            Animated.parallel([
-              Animated.timing(headerOpacity, {
-                toValue: 0,
-                duration: 200,
-                useNativeDriver: true,
-              }),
-              Animated.timing(headerTranslateY, {
-                toValue: -100,
-                duration: 200,
-                useNativeDriver: true,
-              }),
-            ]).start();
-          }
-        } else if (diff < 0 || currentScrollY <= 10) {
-          // Scrolling up or at top - show header
-          if (scrollDirection.current !== 'up') {
-            scrollDirection.current = 'up';
-            Animated.parallel([
-              Animated.timing(headerOpacity, {
-                toValue: 1,
-                duration: 200,
-                useNativeDriver: true,
-              }),
-              Animated.timing(headerTranslateY, {
-                toValue: 0,
-                duration: 200,
-                useNativeDriver: true,
-              }),
-            ]).start();
-          }
-        }
-        
-        lastScrollY.current = currentScrollY;
-      },
-    }
-  );
 
   const getStatusColor = (status: string): [string, string] => {
     const colors: { [key: string]: [string, string] } = {
@@ -336,58 +281,45 @@ export default function SellerDashboardScreen({ navigation }: any) {
 
 
   return (
-    <View style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.scrollContent}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#34C759" />
+      }
+      showsVerticalScrollIndicator={false}
+    >
       {/* Header */}
-      <Animated.View
-        style={[
-          styles.headerContainer,
-          {
-            opacity: headerOpacity,
-            transform: [{ translateY: headerTranslateY }],
-          },
-        ]}
+      <LinearGradient
+        colors={['#34C759', '#30B350', '#2A9F47']}
+        style={styles.headerGradient}
       >
-        <LinearGradient
-          colors={['#34C759', '#30B350', '#2A9F47']}
-          style={styles.header}
-        >
-          <View style={styles.headerContent}>
-            <View style={styles.welcomeSection}>
-              <Text style={styles.welcomeText}>¡Hola, {user?.firstName}!</Text>
-              <Text style={styles.subtitle}>Aquí está tu negocio hoy</Text>
-            </View>
-            <TouchableOpacity
-              style={styles.notificationButton}
-              onPress={() => navigation.navigate('Notifications')}
-            >
-              <View style={styles.bellContainer}>
-                <Ionicons name="notifications" size={24} color="#FFFFFF" />
-                {stats?.pendingOrders && stats.pendingOrders > 0 && (
-                  <View style={styles.notificationBadge}>
-                    <Text style={styles.notificationBadgeText}>{stats.pendingOrders}</Text>
-                  </View>
-                )}
-              </View>
-            </TouchableOpacity>
+        <View style={styles.headerContent}>
+          <View style={styles.welcomeSection}>
+            <Text style={styles.welcomeText}>¡Hola, {user?.firstName}!</Text>
+            <Text style={styles.subtitle}>Aquí está tu negocio hoy</Text>
           </View>
-        </LinearGradient>
-      </Animated.View>
+          <TouchableOpacity
+            style={styles.notificationButton}
+            onPress={() => navigation.navigate('Notifications')}
+          >
+            <View style={styles.bellContainer}>
+              <Ionicons name="notifications" size={24} color="#FFFFFF" />
+              {stats?.pendingOrders && stats.pendingOrders > 0 && (
+                <View style={styles.notificationBadge}>
+                  <Text style={styles.notificationBadgeText}>{stats.pendingOrders}</Text>
+                </View>
+              )}
+            </View>
+          </TouchableOpacity>
+        </View>
+      </LinearGradient>
 
-      <Animated.ScrollView
-        style={styles.scrollContent}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#34C759" />
-        }
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingTop: 140 }}
-      >
-        {/* Stats Principales */}
-        <View style={styles.section}>
+      {/* Stats Principales */}
+      <View style={styles.section}>
           <View style={styles.sectionTitleContainer}>
-            <Ionicons name="stats-chart" size={20} color="#1a1a2e" style={styles.sectionTitleIcon} />
-            <Text style={styles.sectionTitle}>Estadísticas</Text>
+            <Ionicons name="stats-chart" size={20} color="#FFFFFF" style={styles.sectionTitleIcon} />
+            <Text style={[styles.sectionTitle, { color: '#FFFFFF' }]}>Estadísticas</Text>
           </View>
           <View style={styles.statsGrid}>
             {renderStatCard(
@@ -421,13 +353,13 @@ export default function SellerDashboardScreen({ navigation }: any) {
               () => navigation.navigate('LowStockProducts')
             )}
           </View>
-        </View>
+      </View>
 
-        {/* Acciones Rápidas */}
-        <View style={styles.section}>
+      {/* Acciones Rápidas */}
+      <View style={styles.section}>
           <View style={styles.sectionTitleContainer}>
-            <Ionicons name="flash" size={20} color="#1a1a2e" style={styles.sectionTitleIcon} />
-            <Text style={styles.sectionTitle}>Acciones Rápidas</Text>
+            <Ionicons name="flash" size={20} color="#FFFFFF" style={styles.sectionTitleIcon} />
+            <Text style={[styles.sectionTitle, { color: '#FFFFFF' }]}>Acciones Rápidas</Text>
           </View>
           <View style={styles.actionsGrid}>
             <TouchableOpacity
@@ -440,7 +372,7 @@ export default function SellerDashboardScreen({ navigation }: any) {
                 style={styles.actionGradient}
               >
                 <MaterialIcons name="inventory" size={32} color="#34C759" />
-                <Text style={styles.actionText}>Productos</Text>
+                <Text style={[styles.sectionTitle, { color: '#FFFFFF' }]}>Productos</Text>
               </LinearGradient>
             </TouchableOpacity>
             
@@ -454,7 +386,7 @@ export default function SellerDashboardScreen({ navigation }: any) {
                 style={styles.actionGradient}
               >
                 <MaterialIcons name="shopping-cart" size={32} color="#667eea" />
-                <Text style={styles.actionText}>Órdenes</Text>
+                <Text style={[styles.sectionTitle, { color: '#FFFFFF' }]}>Órdenes</Text>
               </LinearGradient>
             </TouchableOpacity>
             
@@ -468,7 +400,7 @@ export default function SellerDashboardScreen({ navigation }: any) {
                 style={styles.actionGradient}
               >
                 <Ionicons name="document-text" size={32} color="#FFD60A" />
-                <Text style={styles.actionText}>Reportes</Text>
+                <Text style={[styles.sectionTitle, { color: '#FFFFFF' }]}>Reportes</Text>
               </LinearGradient>
             </TouchableOpacity>
             
@@ -482,15 +414,15 @@ export default function SellerDashboardScreen({ navigation }: any) {
                 style={styles.actionGradient}
               >
                 <Ionicons name="settings" size={32} color="#f093fb" />
-                <Text style={styles.actionText}>Ajustes</Text>
+                <Text style={[styles.sectionTitle, { color: '#FFFFFF' }]}>Ajustes</Text>
               </LinearGradient>
             </TouchableOpacity>
           </View>
-        </View>
+      </View>
 
-        {/* Productos Recientes */}
-        {recentProducts.length > 0 && (
-          <View style={styles.section}>
+      {/* Productos Recientes */}
+      {recentProducts.length > 0 && (
+        <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <View style={styles.sectionTitleContainer}>
                 <MaterialIcons name="inventory" size={20} color="#1a1a2e" style={styles.sectionTitleIcon} />
@@ -501,12 +433,12 @@ export default function SellerDashboardScreen({ navigation }: any) {
               </TouchableOpacity>
             </View>
             {recentProducts.slice(0, 3).map(renderProductCard)}
-          </View>
-        )}
+        </View>
+      )}
 
-        {/* Órdenes Recientes */}
-        {recentOrders.length > 0 && (
-          <View style={styles.section}>
+      {/* Órdenes Recientes */}
+      {recentOrders.length > 0 && (
+        <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <View style={styles.sectionTitleContainer}>
                 <MaterialIcons name="shopping-cart" size={20} color="#1a1a2e" style={styles.sectionTitleIcon} />
@@ -517,17 +449,16 @@ export default function SellerDashboardScreen({ navigation }: any) {
               </TouchableOpacity>
             </View>
             {recentOrders.slice(0, 3).map(renderOrderCard)}
-          </View>
-        )}
+        </View>
+      )}
 
-        {/* Footer */}
-        <View style={styles.footer}>
+      {/* Footer */}
+      <View style={styles.footer}>
           <Text style={styles.footerText}>
             Última actualización: {new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
           </Text>
         </View>
-      </Animated.ScrollView>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -535,6 +466,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#0a0a0f',
+  },
+  scrollContent: {
+    paddingBottom: 40,
   },
   loadingContainer: {
     flex: 1,
@@ -547,18 +481,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#fff',
   },
-  headerContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 1000,
-    elevation: 5,
-  },
-  header: {
-    paddingTop: 60,
+  headerGradient: {
+    paddingTop: 64,
     paddingBottom: 24,
     paddingHorizontal: 20,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
   },
   headerContent: {
     flexDirection: 'row',
@@ -617,9 +545,6 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 11,
     fontWeight: 'bold',
-  },
-  scrollContent: {
-    flex: 1,
   },
   section: {
     padding: 20,
