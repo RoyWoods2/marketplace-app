@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -96,27 +96,6 @@ export default function SellerOrdersScreen({ navigation }: any) {
   const { token, user } = useAuth();
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const scrollY = useRef(new Animated.Value(0)).current;
-
-  const headerOpacity = useMemo(
-    () =>
-      scrollY.interpolate({
-        inputRange: [0, 140],
-        outputRange: [1, 0],
-        extrapolate: 'clamp',
-      }),
-    [scrollY]
-  );
-
-  const headerTranslateY = useMemo(
-    () =>
-      scrollY.interpolate({
-        inputRange: [0, 140],
-        outputRange: [0, -150],
-        extrapolate: 'clamp',
-      }),
-    [scrollY]
-  );
 
   useEffect(() => {
     fetchOrders();
@@ -159,13 +138,6 @@ export default function SellerOrdersScreen({ navigation }: any) {
     await fetchOrders();
     setRefreshing(false);
   };
-
-  const handleScroll = Animated.event(
-    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-    {
-      useNativeDriver: true,
-    }
-  );
 
   const getFilteredAndSortedOrders = () => {
     let filtered = orders;
@@ -493,74 +465,56 @@ export default function SellerOrdersScreen({ navigation }: any) {
   const deliveredCount = orders.filter(o => o.status === 'DELIVERED').length;
 
 
-  return (
-    <View style={styles.container}>
+  const renderHeader = () => (
+    <>
       {/* Header */}
-      <Animated.View
-        style={[
-          styles.headerContainer,
-          {
-            opacity: headerOpacity,
-            transform: [{ translateY: headerTranslateY }],
-          },
-        ]}
+      <LinearGradient
+        colors={['#34C759', '#30B350'] as const}
+        style={styles.headerGradient}
       >
-        <LinearGradient
-          colors={['#34C759', '#30B350'] as const}
-          style={styles.header}
-        >
-          <View style={styles.headerContent}>
-            <View style={styles.headerLeft}>
-              <MaterialIcons name="shopping-cart" size={24} color="#FFFFFF" />
-              <Text style={styles.headerTitle}>Mis Órdenes</Text>
-              <Text style={styles.headerSubtitle}>{orders.length} orden{orders.length !== 1 ? 'es' : ''} total{orders.length !== 1 ? 'es' : ''}</Text>
-            </View>
-            <TouchableOpacity
-              style={styles.headerActionButton}
-              onPress={() => setShowStatsModal(true)}
-            >
-              <Ionicons name="stats-chart" size={24} color="#FFFFFF" />
-            </TouchableOpacity>
-          </View>
-        </LinearGradient>
-
-        {/* Search Bar */}
-        <View style={styles.searchContainer}>
-          <View style={styles.searchInputWrapper}>
-            <Ionicons name="search" size={24} color="#888" />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Buscar por cliente, producto, código..."
-              placeholderTextColor="#888"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-            {searchQuery.length > 0 && (
-              <TouchableOpacity onPress={() => setSearchQuery('')}>
-                <Ionicons name="close" size={24} color="#888" />
-              </TouchableOpacity>
-            )}
+        <View style={styles.headerContent}>
+          <View style={styles.headerLeft}>
+            <MaterialIcons name="shopping-cart" size={24} color="#FFFFFF" />
+            <Text style={styles.headerTitle}>Mis Órdenes</Text>
+            <Text style={styles.headerSubtitle}>{orders.length} orden{orders.length !== 1 ? 'es' : ''} total{orders.length !== 1 ? 'es' : ''}</Text>
           </View>
           <TouchableOpacity
-            style={styles.sortButton}
-            onPress={() => setShowSortModal(true)}
+            style={styles.headerActionButton}
+            onPress={() => setShowStatsModal(true)}
           >
-            <Ionicons name="swap-vertical" size={24} color="#888" />
-            <Text style={styles.sortButtonText}>{getSortLabel()}</Text>
+            <Ionicons name="stats-chart" size={24} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
-      </Animated.View>
+      </LinearGradient>
+
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <View style={styles.searchInputWrapper}>
+          <Ionicons name="search" size={24} color="#888" />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Buscar por cliente, producto, código..."
+            placeholderTextColor="#888"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <Ionicons name="close" size={24} color="#888" />
+            </TouchableOpacity>
+          )}
+        </View>
+        <TouchableOpacity
+          style={styles.sortButton}
+          onPress={() => setShowSortModal(true)}
+        >
+          <Ionicons name="swap-vertical" size={24} color="#888" />
+          <Text style={styles.sortButtonText}>{getSortLabel()}</Text>
+        </TouchableOpacity>
+      </View>
 
       {/* Filters */}
-      <Animated.View
-        style={[
-          styles.filtersContainer,
-          {
-            opacity: headerOpacity,
-            transform: [{ translateY: headerTranslateY }],
-          },
-        ]}
-      >
+      <View style={styles.filtersContainer}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filtersScroll}>
           <FilterButton type="all" label="Todas" icon={<Ionicons name="list" size={24} color="#888" />} count={orders.length} />
           <FilterButton type="pending" label="Pendientes" icon={<Ionicons name="time" size={24} color="#888" />} count={pendingCount} />
@@ -568,16 +522,19 @@ export default function SellerOrdersScreen({ navigation }: any) {
           <FilterButton type="ready" label="Listas" icon={<MaterialIcons name="check-circle" size={24} color="#888" />} count={readyCount} />
           <FilterButton type="delivered" label="Entregadas" icon={<MaterialIcons name="check-circle" size={24} color="#888" />} count={deliveredCount} />
         </ScrollView>
-      </Animated.View>
+      </View>
+    </>
+  );
 
+  return (
+    <View style={styles.container}>
       {/* Orders List */}
-      <Animated.FlatList
+      <FlatList
         data={filteredOrders}
         renderItem={renderOrder}
         keyExtractor={(item) => item.id}
+        ListHeaderComponent={renderHeader}
         contentContainerStyle={styles.listContent}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
         refreshControl={
           <RefreshControl 
             refreshing={refreshing} 
@@ -704,18 +661,12 @@ const styles = StyleSheet.create({
     marginTop: 16,
     fontSize: 16,
   },
-  headerContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 1000,
-    elevation: 5,
-  },
-  header: {
-    paddingTop: 60,
-    paddingBottom: 20,
+  headerGradient: {
+    paddingTop: 64,
+    paddingBottom: 24,
     paddingHorizontal: 20,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
   },
   headerTitle: {
     fontSize: 28,
@@ -734,6 +685,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255,255,255,0.1)',
+    marginTop: 0,
   },
   filtersScroll: {
     paddingHorizontal: 16,
@@ -805,7 +757,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: 16,
-    paddingTop: 240,
+    paddingBottom: 40,
   },
   orderCard: {
     marginBottom: 12,

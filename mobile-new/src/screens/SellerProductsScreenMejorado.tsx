@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -80,27 +80,6 @@ export default function SellerProductsScreen() {
   const { token, user } = useAuth();
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const scrollY = useRef(new Animated.Value(0)).current;
-
-  const headerOpacity = useMemo(
-    () =>
-      scrollY.interpolate({
-        inputRange: [0, 140],
-        outputRange: [1, 0],
-        extrapolate: 'clamp',
-      }),
-    [scrollY]
-  );
-
-  const headerTranslateY = useMemo(
-    () =>
-      scrollY.interpolate({
-        inputRange: [0, 140],
-        outputRange: [0, -150],
-        extrapolate: 'clamp',
-      }),
-    [scrollY]
-  );
 
   const [newProduct, setNewProduct] = useState({
     title: '',
@@ -187,13 +166,6 @@ export default function SellerProductsScreen() {
     await fetchProducts();
     setRefreshing(false);
   };
-
-  const handleScroll = Animated.event(
-    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-    {
-      useNativeDriver: true,
-    }
-  );
 
   const handleAddProduct = () => {
     setNewProduct({
@@ -583,105 +555,90 @@ export default function SellerProductsScreen() {
   };
 
 
-  return (
-    <View style={styles.container}>
+  const renderHeader = () => (
+    <>
       {/* Header */}
-      <Animated.View
-        style={[
-          styles.headerContainer,
-          {
-            opacity: headerOpacity,
-            transform: [{ translateY: headerTranslateY }],
-          },
-        ]}
+      <LinearGradient
+        colors={['#34C759', '#30B350']}
+        style={styles.headerGradient}
       >
-        <LinearGradient
-          colors={['#34C759', '#30B350']}
-          style={styles.header}
-        >
-          <View style={styles.headerContent}>
-            <View style={styles.headerLeft}>
-              <View style={styles.headerTitleContainer}>
-                <MaterialIcons name="inventory" size={24} color="#FFFFFF" style={styles.headerTitleIcon} />
-                <Text style={styles.headerTitle}>Mis Productos</Text>
-              </View>
-              <Text style={styles.headerSubtitle}>{products.length} producto{products.length !== 1 ? 's' : ''} total{products.length !== 1 ? 'es' : ''}</Text>
+        <View style={styles.headerContent}>
+          <View style={styles.headerLeft}>
+            <View style={styles.headerTitleContainer}>
+              <MaterialIcons name="inventory" size={24} color="#FFFFFF" style={styles.headerTitleIcon} />
+              <Text style={styles.headerTitle}>Mis Productos</Text>
             </View>
-            <View style={styles.headerActions}>
-              <TouchableOpacity
-                style={styles.headerActionButton}
-                onPress={() => setShowStatsModal(true)}
-              >
-                <Ionicons name="stats-chart" size={24} color="#FFFFFF" />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.addButton}
-                onPress={handleAddProduct}
-              >
-                <LinearGradient
-                  colors={['rgba(255,255,255,0.3)', 'rgba(255,255,255,0.2)']}
-                  style={styles.addButtonGradient}
-                >
-                  <Text style={styles.addButtonText}>+ Agregar</Text>
-                </LinearGradient>
-              </TouchableOpacity>
-            </View>
+            <Text style={styles.headerSubtitle}>{products.length} producto{products.length !== 1 ? 's' : ''} total{products.length !== 1 ? 'es' : ''}</Text>
           </View>
-        </LinearGradient>
-
-        {/* Search Bar */}
-        <View style={styles.searchContainer}>
-          <View style={styles.searchInputWrapper}>
-            <Ionicons name="search" size={20} color="#888" style={styles.searchIcon} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Buscar productos..."
-              placeholderTextColor="#888"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-            {searchQuery.length > 0 && (
-              <TouchableOpacity onPress={() => setSearchQuery('')}>
-                <Ionicons name="close-circle" size={20} color="#888" />
-              </TouchableOpacity>
-            )}
+          <View style={styles.headerActions}>
+            <TouchableOpacity
+              style={styles.headerActionButton}
+              onPress={() => setShowStatsModal(true)}
+            >
+              <Ionicons name="stats-chart" size={24} color="#FFFFFF" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.addButton}
+              onPress={handleAddProduct}
+            >
+              <LinearGradient
+                colors={['rgba(255,255,255,0.3)', 'rgba(255,255,255,0.2)']}
+                style={styles.addButtonGradient}
+              >
+                <Text style={styles.addButtonText}>+ Agregar</Text>
+              </LinearGradient>
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            style={styles.sortButton}
-            onPress={() => setShowSortModal(true)}
-          >
-            <Ionicons name="swap-vertical" size={20} color="#FFFFFF" style={styles.sortButtonIcon} />
-            <Text style={styles.sortButtonText}>{getSortLabel()}</Text>
-          </TouchableOpacity>
         </View>
-      </Animated.View>
+      </LinearGradient>
+
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <View style={styles.searchInputWrapper}>
+          <Ionicons name="search" size={20} color="#888" style={styles.searchIcon} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Buscar productos..."
+            placeholderTextColor="#888"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <Ionicons name="close-circle" size={20} color="#888" />
+            </TouchableOpacity>
+          )}
+        </View>
+        <TouchableOpacity
+          style={styles.sortButton}
+          onPress={() => setShowSortModal(true)}
+        >
+          <Ionicons name="swap-vertical" size={20} color="#FFFFFF" style={styles.sortButtonIcon} />
+          <Text style={styles.sortButtonText}>{getSortLabel()}</Text>
+        </TouchableOpacity>
+      </View>
 
       {/* Filters */}
-      <Animated.View
-        style={[
-          styles.filtersContainer,
-          {
-            opacity: headerOpacity,
-            transform: [{ translateY: headerTranslateY }],
-          },
-        ]}
-      >
+      <View style={styles.filtersContainer}>
         <View style={styles.filtersScroll}>
           <FilterButton type="all" label="Todos" icon={<MaterialIcons name="list" size={18} color="currentColor" />} count={products.length} />
           <FilterButton type="active" label="Activos" icon={<Ionicons name="checkmark-circle" size={18} color="currentColor" />} count={activeCount} />
           <FilterButton type="inactive" label="Pausados" icon={<Ionicons name="pause-circle" size={18} color="currentColor" />} count={inactiveCount} />
           <FilterButton type="lowStock" label="Stock Bajo" icon={<Ionicons name="warning" size={18} color="currentColor" />} count={lowStockCount} />
         </View>
-      </Animated.View>
+      </View>
+    </>
+  );
 
+  return (
+    <View style={styles.container}>
       {/* Products List */}
-      <Animated.FlatList
+      <FlatList
         data={filteredProducts}
         renderItem={renderProduct}
         keyExtractor={(item) => item.id}
+        ListHeaderComponent={renderHeader}
         contentContainerStyle={styles.listContent}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
         refreshControl={
           <RefreshControl 
             refreshing={refreshing} 
@@ -1153,18 +1110,12 @@ const styles = StyleSheet.create({
     marginTop: 16,
     fontSize: 16,
   },
-  headerContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 1000,
-    elevation: 5,
-  },
-  header: {
-    paddingTop: 60,
-    paddingBottom: 20,
+  headerGradient: {
+    paddingTop: 64,
+    paddingBottom: 24,
     paddingHorizontal: 20,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
   },
   headerContent: {
     flexDirection: 'row',
@@ -1206,6 +1157,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255,255,255,0.1)',
+    marginTop: 0,
   },
   filtersScroll: {
     flexDirection: 'row',
@@ -1272,7 +1224,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: 16,
-    paddingTop: 250,
+    paddingBottom: 40,
   },
   productCard: {
     marginBottom: 16,

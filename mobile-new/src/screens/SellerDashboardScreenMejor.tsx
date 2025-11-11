@@ -425,8 +425,8 @@ export default function SellerDashboardScreen({ navigation }: any) {
         <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <View style={styles.sectionTitleContainer}>
-                <MaterialIcons name="inventory" size={20} color="#1a1a2e" style={styles.sectionTitleIcon} />
-                <Text style={styles.sectionTitle}>Productos Recientes</Text>
+                <MaterialIcons name="inventory" size={20} color="#FFFFFF" style={styles.sectionTitleIcon} />
+                <Text style={[styles.sectionTitle, { color: '#FFFFFF' }]}>Productos Recientes</Text>
               </View>
               <TouchableOpacity onPress={() => navigation.navigate('Products')}>
                 <Text style={styles.seeAllText}>Ver todos →</Text>
@@ -441,8 +441,8 @@ export default function SellerDashboardScreen({ navigation }: any) {
         <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <View style={styles.sectionTitleContainer}>
-                <MaterialIcons name="shopping-cart" size={20} color="#1a1a2e" style={styles.sectionTitleIcon} />
-                <Text style={styles.sectionTitle}>Órdenes Recientes</Text>
+                <MaterialIcons name="shopping-cart" size={20} color="#FFFFFF" style={styles.sectionTitleIcon} />
+                <Text style={[styles.sectionTitle, { color: '#FFFFFF' }]}>Órdenes Recientes</Text>
               </View>
               <TouchableOpacity onPress={() => navigation.navigate('Orders')}>
                 <Text style={styles.seeAllText}>Ver todas →</Text>
