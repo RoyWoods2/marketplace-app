@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -73,14 +73,14 @@ const STATUS_LABELS: { [key: string]: string } = {
   CANCELLED: 'Cancelado',
 };
 
-const STATUS_COLORS: { [key: string]: string[] } = {
+const STATUS_COLORS: Record<string, readonly [string, string]> = {
   PENDING: ['#FF9800', '#FB8C00'],
   PAYMENT_CONFIRMED: ['#2196F3', '#1976D2'],
   PREPARING: ['#9C27B0', '#7B1FA2'],
   READY_FOR_PICKUP: ['#4CAF50', '#388E3C'],
   DELIVERED: ['#34C759', '#30B350'],
   CANCELLED: ['#FF3B30', '#FF2D20'],
-};
+} as const;
 
 export default function SellerOrdersScreen({ navigation }: any) {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -93,15 +93,30 @@ export default function SellerOrdersScreen({ navigation }: any) {
   const [showStatsModal, setShowStatsModal] = useState(false);
   const [showQuickActionModal, setShowQuickActionModal] = useState(false);
   const [selectedOrderForAction, setSelectedOrderForAction] = useState<Order | null>(null);
-  const [showSummary, setShowSummary] = useState(true);
   const { token, user } = useAuth();
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scrollY = useRef(new Animated.Value(0)).current;
-  const headerOpacity = useRef(new Animated.Value(1)).current;
-  const headerTranslateY = useRef(new Animated.Value(0)).current;
-  const lastScrollY = useRef(0);
-  const scrollDirection = useRef<'up' | 'down'>('up');
+
+  const headerOpacity = useMemo(
+    () =>
+      scrollY.interpolate({
+        inputRange: [0, 140],
+        outputRange: [1, 0],
+        extrapolate: 'clamp',
+      }),
+    [scrollY]
+  );
+
+  const headerTranslateY = useMemo(
+    () =>
+      scrollY.interpolate({
+        inputRange: [0, 140],
+        outputRange: [0, -150],
+        extrapolate: 'clamp',
+      }),
+    [scrollY]
+  );
 
   useEffect(() => {
     fetchOrders();
@@ -148,50 +163,7 @@ export default function SellerOrdersScreen({ navigation }: any) {
   const handleScroll = Animated.event(
     [{ nativeEvent: { contentOffset: { y: scrollY } } }],
     {
-      useNativeDriver: false,
-      listener: (event: any) => {
-        const currentScrollY = event.nativeEvent.contentOffset.y;
-        const diff = currentScrollY - lastScrollY.current;
-        
-        // Determine scroll direction
-        if (diff > 0 && currentScrollY > 50) {
-          // Scrolling down and past threshold - hide header
-          if (scrollDirection.current !== 'down') {
-            scrollDirection.current = 'down';
-            Animated.parallel([
-              Animated.timing(headerOpacity, {
-                toValue: 0,
-                duration: 200,
-                useNativeDriver: true,
-              }),
-              Animated.timing(headerTranslateY, {
-                toValue: -150,
-                duration: 200,
-                useNativeDriver: true,
-              }),
-            ]).start();
-          }
-        } else if (diff < 0 || currentScrollY <= 10) {
-          // Scrolling up or at top - show header
-          if (scrollDirection.current !== 'up') {
-            scrollDirection.current = 'up';
-            Animated.parallel([
-              Animated.timing(headerOpacity, {
-                toValue: 1,
-                duration: 200,
-                useNativeDriver: true,
-              }),
-              Animated.timing(headerTranslateY, {
-                toValue: 0,
-                duration: 200,
-                useNativeDriver: true,
-              }),
-            ]).start();
-          }
-        }
-        
-        lastScrollY.current = currentScrollY;
-      },
+      useNativeDriver: true,
     }
   );
 
@@ -347,8 +319,14 @@ export default function SellerOrdersScreen({ navigation }: any) {
     return labels[sortBy] || 'Ordenar';
   };
 
-  const FilterButton = ({ type, label, icon, count }: { type: FilterType; label: string; icon: string; count?: number }) => {
+  const FilterButton = ({ type, label, icon, count }: { type: FilterType; label: string; icon: React.ReactNode | string; count?: number }) => {
     const isActive = filter === type;
+    const iconElement =
+      typeof icon === 'string' ? (
+        <Text style={styles.filterIconText}>{icon}</Text>
+      ) : (
+        <View style={styles.filterIconWrapper}>{icon}</View>
+      );
     return (
       <TouchableOpacity
         style={[styles.filterButton, isActive && styles.filterButtonActive]}
@@ -357,12 +335,12 @@ export default function SellerOrdersScreen({ navigation }: any) {
       >
         {isActive ? (
           <LinearGradient
-            colors={['#34C759', '#30B350']}
+            colors={['#34C759', '#30B350'] as const}
             style={styles.filterGradient}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
           >
-            <Text style={styles.filterIcon}>{icon}</Text>
+            {iconElement}
             <Text style={styles.filterTextActive}>{label}</Text>
             {count !== undefined && count > 0 && (
               <View style={styles.filterBadge}>
@@ -372,7 +350,7 @@ export default function SellerOrdersScreen({ navigation }: any) {
           </LinearGradient>
         ) : (
           <View style={styles.filterInactive}>
-            <Text style={styles.filterIcon}>{icon}</Text>
+            {iconElement}
             <Text style={styles.filterText}>{label}</Text>
             {count !== undefined && count > 0 && (
               <View style={[styles.filterBadge, styles.filterBadgeInactive]}>
@@ -386,7 +364,7 @@ export default function SellerOrdersScreen({ navigation }: any) {
   };
 
   const renderOrder = ({ item }: { item: Order }) => {
-    const statusColors = STATUS_COLORS[item.status] || ['#666', '#555'];
+    const statusColors = STATUS_COLORS[item.status] || (['#666666', '#555555'] as const);
     const statusLabel = STATUS_LABELS[item.status] || item.status;
     const urgent = isUrgent(item);
     const newOrder = isNew(item);
@@ -528,7 +506,7 @@ export default function SellerOrdersScreen({ navigation }: any) {
         ]}
       >
         <LinearGradient
-          colors={['#34C759', '#30B350']}
+          colors={['#34C759', '#30B350'] as const}
           style={styles.header}
         >
           <View style={styles.headerContent}>
@@ -572,50 +550,6 @@ export default function SellerOrdersScreen({ navigation }: any) {
           </TouchableOpacity>
         </View>
       </Animated.View>
-
-      {/* Today's Summary Card */}
-      {(stats.todayPending > 0 || stats.todayRevenue > 0 || stats.todayCompleted > 0) && showSummary ? (
-        <View style={styles.summaryContainer}>
-          <Card style={styles.summaryCard}>
-            <View style={styles.summaryHeader}>
-              <MaterialIcons name="analytics" size={24} color="#FFFFFF" />
-              <Text style={styles.summaryTitle}>Resumen de Hoy</Text>
-              <TouchableOpacity
-                style={styles.summaryCloseButton}
-                onPress={() => setShowSummary(false)}
-              >
-                <Ionicons name="close" size={24} color="#888" />
-              </TouchableOpacity>
-            </View>
-            <View style={styles.summaryGrid}>
-              <View style={styles.summaryItem}>
-                <Text style={styles.summaryValue}>{stats.todayPending}</Text>
-                <Text style={styles.summaryLabel}>Pendientes</Text>
-              </View>
-              <View style={styles.summaryItem}>
-                <Text style={[styles.summaryValue, styles.summaryValueGreen]}>
-                  {formatCurrencyShort(stats.todayRevenue)}
-                </Text>
-                <Text style={styles.summaryLabel}>Ingresos</Text>
-              </View>
-              <View style={styles.summaryItem}>
-                <Text style={styles.summaryValue}>{stats.todayCompleted}</Text>
-                <Text style={styles.summaryLabel}>Completadas</Text>
-              </View>
-            </View>
-          </Card>
-        </View>
-      ) : (stats.todayPending > 0 || stats.todayRevenue > 0 || stats.todayCompleted > 0) && !showSummary ? (
-        <View style={styles.summaryContainer}>
-          <TouchableOpacity
-            style={styles.summaryShowButton}
-            onPress={() => setShowSummary(true)}
-          >
-            <MaterialIcons name="analytics" size={24} color="#FFFFFF" />
-            <Text style={styles.summaryShowText}>Mostrar Resumen de Hoy</Text>
-          </TouchableOpacity>
-        </View>
-      ) : null}
 
       {/* Filters */}
       <Animated.View
@@ -667,6 +601,89 @@ export default function SellerOrdersScreen({ navigation }: any) {
           </View>
         }
       />
+
+      <Modal
+        visible={showStatsModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowStatsModal(false)}
+      >
+        <View style={styles.statsOverlay}>
+          <View style={styles.statsModal}>
+            <LinearGradient colors={['#34C759', '#30B350'] as const} style={styles.statsHeader}>
+              <View style={styles.statsHeaderContent}>
+                <Ionicons name="stats-chart" size={20} color="#FFFFFF" />
+                <Text style={styles.statsTitle}>Resumen de ventas</Text>
+              </View>
+              <TouchableOpacity style={styles.statsCloseButton} onPress={() => setShowStatsModal(false)}>
+                <Ionicons name="close" size={18} color="#FFFFFF" />
+              </TouchableOpacity>
+            </LinearGradient>
+
+            <View style={styles.statsBody}>
+              <View style={styles.statsGrid}>
+                <View style={styles.statsCard}>
+                  <View style={[styles.statsIconWrapper, { backgroundColor: 'rgba(52,199,89,0.15)' }]}
+                  >
+                    <Ionicons name="bag-handle" size={20} color="#34C759" />
+                  </View>
+                  <Text style={styles.statsCardValue}>{stats.totalOrders}</Text>
+                  <Text style={styles.statsCardLabel}>Órdenes totales</Text>
+                </View>
+                <View style={styles.statsCard}>
+                  <View style={[styles.statsIconWrapper, { backgroundColor: 'rgba(255,214,10,0.15)' }]}
+                  >
+                    <Ionicons name="cash-outline" size={20} color="#FFD60A" />
+                  </View>
+                  <Text style={styles.statsCardValue}>{formatCurrencyShort(stats.totalRevenue)}</Text>
+                  <Text style={styles.statsCardLabel}>Ingresos totales</Text>
+                </View>
+                <View style={styles.statsCard}>
+                  <View style={[styles.statsIconWrapper, { backgroundColor: 'rgba(255,159,10,0.15)' }]}
+                  >
+                    <Ionicons name="timer-outline" size={20} color="#FF9F0A" />
+                  </View>
+                  <Text style={styles.statsCardValue}>{stats.totalPending}</Text>
+                  <Text style={styles.statsCardLabel}>Pendientes</Text>
+                </View>
+                <View style={styles.statsCard}>
+                  <View style={[styles.statsIconWrapper, { backgroundColor: 'rgba(52,199,89,0.15)' }]}
+                  >
+                    <Ionicons name="trending-up-outline" size={20} color="#34C759" />
+                  </View>
+                  <Text style={styles.statsCardValue}>{stats.todayCompleted}</Text>
+                  <Text style={styles.statsCardLabel}>Completadas hoy</Text>
+                </View>
+              </View>
+
+              <View style={styles.statsTodayBlock}>
+                <Text style={styles.statsTodayTitle}>Hoy</Text>
+                <View style={styles.statsTodayRow}>
+                  <View style={styles.statsTodayLabelRow}>
+                    <Ionicons name="cash-outline" size={16} color="#FFD60A" />
+                    <Text style={styles.statsTodayLabel}>Ingresos</Text>
+                  </View>
+                  <Text style={styles.statsTodayValue}>{formatCurrencyShort(stats.todayRevenue)}</Text>
+                </View>
+                <View style={styles.statsTodayRow}>
+                  <View style={styles.statsTodayLabelRow}>
+                    <Ionicons name="timer-outline" size={16} color="#FF9F0A" />
+                    <Text style={styles.statsTodayLabel}>Pendientes</Text>
+                  </View>
+                  <Text style={styles.statsTodayValue}>{stats.todayPending}</Text>
+                </View>
+                <View style={styles.statsTodayRow}>
+                  <View style={styles.statsTodayLabelRow}>
+                    <Ionicons name="trending-up-outline" size={16} color="#34C759" />
+                    <Text style={styles.statsTodayLabel}>Completadas</Text>
+                  </View>
+                  <Text style={styles.statsTodayValue}>{stats.todayCompleted}</Text>
+                </View>
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -752,8 +769,13 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  filterIcon: {
+  filterIconWrapper: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  filterIconText: {
     fontSize: 14,
+    color: '#fff',
   },
   filterText: {
     color: '#888',
@@ -783,7 +805,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: 16,
-    paddingTop: 280,
+    paddingTop: 240,
   },
   orderCard: {
     marginBottom: 12,
@@ -1270,77 +1292,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '500',
   },
-  summaryContainer: {
-    padding: 16,
-    paddingBottom: 8,
-  },
-  summaryCard: {
-    padding: 16,
-  },
-  summaryHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  summaryTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  summaryCloseButton: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  summaryCloseIcon: {
-    color: '#888',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  summaryShowButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    gap: 8,
-  },
-  summaryShowIcon: {
-    fontSize: 16,
-  },
-  summaryShowText: {
-    fontSize: 14,
-    color: '#bbb',
-    fontWeight: '500',
-  },
-  summaryGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  summaryItem: {
-    alignItems: 'center',
-  },
-  summaryValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 4,
-  },
-  summaryValueGreen: {
-    color: '#34C759',
-  },
-  summaryLabel: {
-    fontSize: 12,
-    color: '#888',
-  },
   newBadge: {
     position: 'absolute',
     top: -4,
@@ -1468,6 +1419,114 @@ const styles = StyleSheet.create({
   quickActionViewDetailText: {
     fontSize: 14,
     color: '#34C759',
+    fontWeight: '600',
+  },
+  statsOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  statsModal: {
+    backgroundColor: '#151527',
+    borderRadius: 24,
+    overflow: 'hidden',
+  },
+  statsHeader: {
+    paddingHorizontal: 20,
+    paddingVertical: 18,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  statsHeaderContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  statsTitle: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  statsCloseButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(0,0,0,0.25)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statsBody: {
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    gap: 24,
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  statsCard: {
+    flexBasis: '48%',
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    padding: 16,
+    gap: 8,
+    alignItems: 'flex-start',
+  },
+  statsIconWrapper: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statsCardValue: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  statsCardLabel: {
+    color: '#8b8fa1',
+    fontSize: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  statsTodayBlock: {
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    padding: 16,
+    gap: 12,
+  },
+  statsTodayTitle: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  statsTodayRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  statsTodayLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  statsTodayLabel: {
+    color: '#8b8fa1',
+    fontSize: 13,
+  },
+  statsTodayValue: {
+    color: '#FFFFFF',
+    fontSize: 14,
     fontWeight: '600',
   },
 });

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -81,10 +81,26 @@ export default function SellerProductsScreen() {
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scrollY = useRef(new Animated.Value(0)).current;
-  const headerOpacity = useRef(new Animated.Value(1)).current;
-  const headerTranslateY = useRef(new Animated.Value(0)).current;
-  const lastScrollY = useRef(0);
-  const scrollDirection = useRef<'up' | 'down'>('up');
+
+  const headerOpacity = useMemo(
+    () =>
+      scrollY.interpolate({
+        inputRange: [0, 140],
+        outputRange: [1, 0],
+        extrapolate: 'clamp',
+      }),
+    [scrollY]
+  );
+
+  const headerTranslateY = useMemo(
+    () =>
+      scrollY.interpolate({
+        inputRange: [0, 140],
+        outputRange: [0, -150],
+        extrapolate: 'clamp',
+      }),
+    [scrollY]
+  );
 
   const [newProduct, setNewProduct] = useState({
     title: '',
@@ -175,50 +191,7 @@ export default function SellerProductsScreen() {
   const handleScroll = Animated.event(
     [{ nativeEvent: { contentOffset: { y: scrollY } } }],
     {
-      useNativeDriver: false,
-      listener: (event: any) => {
-        const currentScrollY = event.nativeEvent.contentOffset.y;
-        const diff = currentScrollY - lastScrollY.current;
-        
-        // Determine scroll direction
-        if (diff > 0 && currentScrollY > 50) {
-          // Scrolling down and past threshold - hide header
-          if (scrollDirection.current !== 'down') {
-            scrollDirection.current = 'down';
-            Animated.parallel([
-              Animated.timing(headerOpacity, {
-                toValue: 0,
-                duration: 200,
-                useNativeDriver: true,
-              }),
-              Animated.timing(headerTranslateY, {
-                toValue: -150,
-                duration: 200,
-                useNativeDriver: true,
-              }),
-            ]).start();
-          }
-        } else if (diff < 0 || currentScrollY <= 10) {
-          // Scrolling up or at top - show header
-          if (scrollDirection.current !== 'up') {
-            scrollDirection.current = 'up';
-            Animated.parallel([
-              Animated.timing(headerOpacity, {
-                toValue: 1,
-                duration: 200,
-                useNativeDriver: true,
-              }),
-              Animated.timing(headerTranslateY, {
-                toValue: 0,
-                duration: 200,
-                useNativeDriver: true,
-              }),
-            ]).start();
-          }
-        }
-        
-        lastScrollY.current = currentScrollY;
-      },
+      useNativeDriver: true,
     }
   );
 
@@ -528,14 +501,19 @@ export default function SellerProductsScreen() {
                   </Text>
                 </View>
               </View>
-              {/* Product Stats */}
               {(item.salesCount || item.revenue) && (
                 <View style={styles.productStats}>
                   {item.salesCount && item.salesCount > 0 && (
-                    <Text style={styles.productStatText}>📈 {item.salesCount} ventas</Text>
+                    <View style={styles.productStatItem}>
+                      <Ionicons name="trending-up" size={16} color="#34C759" />
+                      <Text style={styles.productStatText}>{item.salesCount} ventas</Text>
+                    </View>
                   )}
                   {item.revenue && item.revenue > 0 && (
-                    <Text style={styles.productStatText}>💰 {formatCurrencyShort(item.revenue)}</Text>
+                    <View style={styles.productStatItem}>
+                      <Ionicons name="cash-outline" size={16} color="#34C759" />
+                      <Text style={styles.productStatText}>{formatCurrencyShort(item.revenue)}</Text>
+                    </View>
                   )}
                 </View>
               )}
@@ -544,27 +522,29 @@ export default function SellerProductsScreen() {
                   style={[styles.actionButton, styles.actionButtonSmall]}
                   onPress={() => handlePreviewProduct(item)}
                 >
-                  <Text style={styles.actionButtonText}>👁️</Text>
+                  <Ionicons name="eye" size={18} color="#0a0a0f" />
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.actionButton, styles.actionButtonSmall]}
                   onPress={() => handleDuplicateProduct(item)}
                 >
-                  <Text style={styles.actionButtonText}>📋</Text>
+                  <Ionicons name="copy-outline" size={18} color="#0a0a0f" />
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.actionButton}
                   onPress={() => handleEditProduct(item)}
                 >
-                  <Text style={styles.actionButtonText}>✏️</Text>
+                  <Ionicons name="create-outline" size={18} color="#0a0a0f" />
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.actionButton, styles.actionButtonSecondary]}
                   onPress={() => handleToggleActive(item)}
                 >
-                  <Text style={styles.actionButtonText}>
-                    {item.isActive ? '⏸️' : '▶️'}
-                  </Text>
+                  <Ionicons
+                    name={item.isActive ? 'pause' : 'play'}
+                    size={18}
+                    color={item.isActive ? '#0a0a0f' : '#0a0a0f'}
+                  />
                 </TouchableOpacity>
               </View>
             </View>
@@ -742,9 +722,16 @@ export default function SellerProductsScreen() {
                   colors={['#34C759', '#30B350']}
                   style={styles.modalHeader}
                 >
-                  <Text style={styles.modalTitle}>
-                    {editingProduct ? '✏️ Editar Producto' : '➕ Nuevo Producto'}
-                  </Text>
+                  <View style={styles.modalTitleRow}>
+                    <Ionicons
+                      name={editingProduct ? 'create-outline' : 'add-circle-outline'}
+                      size={22}
+                      color="#FFFFFF"
+                    />
+                    <Text style={styles.modalTitle}>
+                      {editingProduct ? 'Editar Producto' : 'Nuevo Producto'}
+                    </Text>
+                  </View>
                   <TouchableOpacity
                     style={styles.closeButton}
                     onPress={() => {
@@ -752,7 +739,7 @@ export default function SellerProductsScreen() {
                       setShowAddModal(false);
                     }}
                   >
-                    <Text style={styles.closeButtonText}>✕</Text>
+                    <Ionicons name="close" size={20} color="#FFFFFF" />
                   </TouchableOpacity>
                 </LinearGradient>
 
@@ -816,12 +803,15 @@ export default function SellerProductsScreen() {
                   <Text style={newProduct.category ? styles.categorySelectorText : styles.categorySelectorPlaceholder}>
                     {newProduct.category || 'Seleccionar categoría'}
                   </Text>
-                  <Text style={styles.categorySelectorArrow}>▼</Text>
+                  <Ionicons name="chevron-down" size={18} color="#FFFFFF" />
                 </TouchableOpacity>
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>📷 Imágenes del producto *</Text>
+                <View style={styles.inputLabelRow}>
+                  <Ionicons name="images-outline" size={18} color="#FFFFFF" />
+                  <Text style={[styles.inputLabel, styles.inputLabelInline]}>Imágenes del producto *</Text>
+                </View>
                 <Text style={styles.inputHint}>Puedes seleccionar múltiples imágenes. Arrastra para reordenar.</Text>
                 <TouchableOpacity
                   style={styles.imagePickerButton}
@@ -832,7 +822,10 @@ export default function SellerProductsScreen() {
                     colors={['#667eea', '#764ba2']}
                     style={styles.imagePickerGradient}
                   >
-                    <Text style={styles.imagePickerText}>📷 Seleccionar de Galería</Text>
+                    <View style={styles.imagePickerContent}>
+                      <Ionicons name="cloud-upload-outline" size={18} color="#FFFFFF" />
+                      <Text style={styles.imagePickerText}>Seleccionar de Galería</Text>
+                    </View>
                   </LinearGradient>
                 </TouchableOpacity>
 
@@ -847,7 +840,7 @@ export default function SellerProductsScreen() {
                               style={styles.imageActionButton}
                               onPress={() => moveImage(index, index - 1)}
                             >
-                              <Text style={styles.imageActionText}>⬆️</Text>
+                              <MaterialIcons name="keyboard-arrow-up" size={18} color="#FFFFFF" />
                             </TouchableOpacity>
                           )}
                           {index < newProduct.images.length - 1 && (
@@ -855,14 +848,14 @@ export default function SellerProductsScreen() {
                               style={styles.imageActionButton}
                               onPress={() => moveImage(index, index + 1)}
                             >
-                              <Text style={styles.imageActionText}>⬇️</Text>
+                              <MaterialIcons name="keyboard-arrow-down" size={18} color="#FFFFFF" />
                             </TouchableOpacity>
                           )}
                           <TouchableOpacity
                             style={styles.removeImageButton}
                             onPress={() => removeImage(index)}
                           >
-                            <Text style={styles.removeImageText}>✕</Text>
+                            <Ionicons name="close" size={16} color="#FFFFFF" />
                           </TouchableOpacity>
                         </View>
                         <Text style={styles.imageIndexText}>{index + 1}</Text>
@@ -914,24 +907,33 @@ export default function SellerProductsScreen() {
               colors={['#FFD60A', '#FFA500']}
               style={styles.modalHeader}
             >
-              <Text style={styles.modalTitle}>📊 Estadísticas</Text>
+              <View style={styles.modalTitleRow}>
+                <Ionicons name="stats-chart" size={22} color="#FFFFFF" />
+                <Text style={styles.modalTitle}>Estadísticas</Text>
+              </View>
               <TouchableOpacity
                 style={styles.closeButton}
                 onPress={() => setShowStatsModal(false)}
               >
-                <Text style={styles.closeButtonText}>✕</Text>
+                <Ionicons name="close" size={20} color="#FFFFFF" />
               </TouchableOpacity>
             </LinearGradient>
 
             <ScrollView style={styles.modalBody}>
               <Card style={styles.statCard}>
-                <Text style={styles.statCardTitle}>💰 Valor del Inventario</Text>
+                <View style={styles.statCardHeader}>
+                  <Ionicons name="cash-outline" size={20} color="#FFD60A" />
+                  <Text style={styles.statCardTitle}>Valor del Inventario</Text>
+                </View>
                 <Text style={styles.statCardValue}>{formatCurrencyShort(stats.totalInventoryValue)}</Text>
                 <Text style={styles.statCardSubtext}>Total de productos × precio</Text>
               </Card>
 
               <Card style={styles.statCard}>
-                <Text style={styles.statCardTitle}>📦 Resumen de Productos</Text>
+                <View style={styles.statCardHeader}>
+                  <MaterialIcons name="inventory" size={20} color="#FFD60A" />
+                  <Text style={styles.statCardTitle}>Resumen de Productos</Text>
+                </View>
                 <View style={styles.statRow}>
                   <Text style={styles.statLabel}>Total:</Text>
                   <Text style={styles.statValue}>{stats.totalProducts}</Text>
@@ -952,7 +954,10 @@ export default function SellerProductsScreen() {
 
               {stats.topSelling.length > 0 && (
                 <Card style={styles.statCard}>
-                  <Text style={styles.statCardTitle}>🏆 Productos Más Vendidos</Text>
+                  <View style={styles.statCardHeader}>
+                    <Ionicons name="trophy-outline" size={20} color="#FFD60A" />
+                    <Text style={styles.statCardTitle}>Productos Más Vendidos</Text>
+                  </View>
                   {stats.topSelling.map((product, index) => (
                     <View key={product.id} style={styles.topProductItem}>
                       <Text style={styles.topProductRank}>#{index + 1}</Text>
@@ -982,12 +987,15 @@ export default function SellerProductsScreen() {
               colors={['#667eea', '#764ba2']}
               style={styles.modalHeader}
             >
-              <Text style={styles.modalTitle}>🔀 Ordenar Por</Text>
+              <View style={styles.modalTitleRow}>
+                <Ionicons name="swap-vertical" size={22} color="#FFFFFF" />
+                <Text style={styles.modalTitle}>Ordenar Por</Text>
+              </View>
               <TouchableOpacity
                 style={styles.closeButton}
                 onPress={() => setShowSortModal(false)}
               >
-                <Text style={styles.closeButtonText}>✕</Text>
+                <Ionicons name="close" size={20} color="#FFFFFF" />
               </TouchableOpacity>
             </LinearGradient>
 
@@ -1031,12 +1039,15 @@ export default function SellerProductsScreen() {
               colors={['#34C759', '#30B350']}
               style={styles.modalHeader}
             >
-              <Text style={styles.modalTitle}>🏷️ Seleccionar Categoría</Text>
+              <View style={styles.modalTitleRow}>
+                <Ionicons name="pricetag-outline" size={22} color="#FFFFFF" />
+                <Text style={styles.modalTitle}>Seleccionar Categoría</Text>
+              </View>
               <TouchableOpacity
                 style={styles.closeButton}
                 onPress={() => setShowCategoryModal(false)}
               >
-                <Text style={styles.closeButtonText}>✕</Text>
+                <Ionicons name="close" size={20} color="#FFFFFF" />
               </TouchableOpacity>
             </LinearGradient>
 
@@ -1074,12 +1085,15 @@ export default function SellerProductsScreen() {
               colors={['#34C759', '#30B350']}
               style={styles.modalHeader}
             >
-              <Text style={styles.modalTitle}>👁️ Vista Previa</Text>
+              <View style={styles.modalTitleRow}>
+                <Ionicons name="eye" size={22} color="#FFFFFF" />
+                <Text style={styles.modalTitle}>Vista Previa</Text>
+              </View>
               <TouchableOpacity
                 style={styles.closeButton}
                 onPress={() => setShowPreviewModal(false)}
               >
-                <Text style={styles.closeButtonText}>✕</Text>
+                <Ionicons name="close" size={20} color="#FFFFFF" />
               </TouchableOpacity>
             </LinearGradient>
 
@@ -1094,11 +1108,24 @@ export default function SellerProductsScreen() {
                   <Text style={styles.previewPrice}>{formatCurrencyShort(previewProduct.price)}</Text>
                   <Text style={styles.previewDescription}>{previewProduct.description || 'Sin descripción'}</Text>
                   <View style={styles.previewMeta}>
-                    <Text style={styles.previewMetaText}>📦 Stock: {previewProduct.stock}</Text>
-                    <Text style={styles.previewMetaText}>🏷️ {previewProduct.category}</Text>
-                    <Text style={styles.previewMetaText}>
-                      {previewProduct.isActive ? '✅ Activo' : '⏸️ Pausado'}
-                    </Text>
+                    <View style={styles.previewMetaItem}>
+                      <Ionicons name="cube-outline" size={16} color="#FFFFFF" />
+                      <Text style={styles.previewMetaText}>Stock: {previewProduct.stock}</Text>
+                    </View>
+                    <View style={styles.previewMetaItem}>
+                      <Ionicons name="pricetag-outline" size={16} color="#FFFFFF" />
+                      <Text style={styles.previewMetaText}>{previewProduct.category}</Text>
+                    </View>
+                    <View style={styles.previewMetaItem}>
+                      <Ionicons
+                        name={previewProduct.isActive ? 'checkmark-circle' : 'pause-circle'}
+                        size={16}
+                        color={previewProduct.isActive ? '#34C759' : '#FF9800'}
+                      />
+                      <Text style={styles.previewMetaText}>
+                        {previewProduct.isActive ? 'Activo' : 'Pausado'}
+                      </Text>
+                    </View>
                   </View>
                 </View>
               </ScrollView>
@@ -1342,11 +1369,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderColor: 'rgba(255, 255, 255, 0.1)',
   },
-  actionButtonText: {
-    color: '#fff',
-    fontSize: 13,
-    fontWeight: '600',
-  },
   emptyContainer: {
     alignItems: 'center',
     paddingVertical: 60,
@@ -1384,6 +1406,11 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
   },
+  modalTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
@@ -1397,22 +1424,26 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  closeButtonText: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
   modalBody: {
     padding: 20,
   },
   inputGroup: {
     marginBottom: 20,
   },
+  inputLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
   inputLabel: {
     fontSize: 14,
     fontWeight: '600',
     color: '#fff',
     marginBottom: 8,
+  },
+  inputLabelInline: {
+    marginBottom: 0,
   },
   input: {
     backgroundColor: 'rgba(255,255,255,0.05)',
@@ -1460,6 +1491,12 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 20,
     alignItems: 'center',
+    justifyContent: 'center',
+  },
+  imagePickerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
   imagePickerText: {
     color: '#fff',
@@ -1491,11 +1528,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  removeImageText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
   imagePreviewActions: {
     position: 'absolute',
     top: 4,
@@ -1510,9 +1542,6 @@ const styles = StyleSheet.create({
     height: 28,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  imageActionText: {
-    fontSize: 12,
   },
   imageIndexText: {
     position: 'absolute',
@@ -1601,6 +1630,11 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 8,
   },
+  productStatItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
   productStatText: {
     fontSize: 12,
     color: '#888',
@@ -1628,10 +1662,6 @@ const styles = StyleSheet.create({
     color: '#666',
     fontSize: 15,
   },
-  categorySelectorArrow: {
-    color: '#888',
-    fontSize: 14,
-  },
   inputHint: {
     fontSize: 12,
     color: '#888',
@@ -1642,11 +1672,16 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     padding: 20,
   },
+  statCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 12,
+  },
   statCardTitle: {
     fontSize: 16,
     fontWeight: 'bold',
     color: '#fff',
-    marginBottom: 12,
   },
   statCardValue: {
     fontSize: 28,
@@ -1785,6 +1820,11 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   previewMeta: {
+    gap: 8,
+  },
+  previewMetaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 8,
   },
   previewMetaText: {

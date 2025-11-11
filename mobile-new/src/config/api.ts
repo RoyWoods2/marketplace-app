@@ -7,7 +7,7 @@
 const isDevelopment = __DEV__;
 
 // URL por defecto (desarrollo local)
-const DEVELOPMENT_URL = 'http://192.168.1.120:3001';
+const DEVELOPMENT_URL = 'http://192.168.1.120:3000';
 
 // URL de producción (actualizar después de deployar)
 const PRODUCTION_URL = 'https://tu-url.railway.app'; // ⚠️ ACTUALIZAR ESTA URL

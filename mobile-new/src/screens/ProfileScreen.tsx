@@ -8,8 +8,11 @@ import {
   Image,
   Alert,
   RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import { MaterialIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { formatCurrencyShort } from '../utils/currency';
 import { useAuth } from '../context/AuthContext';
 import { API_ENDPOINTS } from '../config/api';
 
@@ -111,27 +114,95 @@ export default function ProfileScreen({ navigation }: any) {
     navigation.getParent()?.navigate('Notifications');
   };
 
-  const renderStatCard = (title: string, value: string | number, icon: string) => (
-    <View style={styles.statCard}>
-      <Text style={styles.statIcon}>{icon}</Text>
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statTitle}>{title}</Text>
-    </View>
-  );
+  type StatCard = {
+    key: string;
+    title: string;
+    value: string | number;
+    icon: React.ReactNode;
+  };
+
+  const displayName = profile?.firstName || profile?.lastName
+    ? `${profile?.firstName || ''} ${profile?.lastName || ''}`.trim()
+    : profile?.username || 'Perfil';
+
+  const accountLabel = user?.userType === 'SELLER' ? 'Vendedor' : 'Cliente';
+
+  const statCards: StatCard[] = (
+    [
+      stats.totalProducts !== undefined && {
+        key: 'products',
+        title: 'Productos',
+        value: stats.totalProducts,
+        icon: <MaterialIcons name="inventory-2" size={18} color="#34C759" />,
+      },
+      stats.totalOrders !== undefined && {
+        key: 'orders',
+        title: 'Órdenes',
+        value: stats.totalOrders,
+        icon: <Ionicons name="cart-outline" size={18} color="#34C759" />,
+      },
+      stats.totalSales !== undefined && {
+        key: 'sales',
+        title: 'Ventas',
+        value: stats.totalSales || 0,
+        icon: <Ionicons name="trending-up-outline" size={18} color="#34C759" />,
+      },
+      stats.totalRevenue !== undefined && {
+        key: 'revenue',
+        title: 'Ingresos',
+        value: formatCurrencyShort(stats.totalRevenue || 0),
+        icon: <Ionicons name="cash-outline" size={18} color="#34C759" />,
+      },
+    ] as (StatCard | null)[]
+  ).filter((item): item is StatCard => Boolean(item));
 
   const renderMenuButton = (title: string, icon: React.ReactNode, onPress: () => void, showArrow: boolean = true) => (
-    <TouchableOpacity style={styles.menuButton} onPress={onPress}>
+    <TouchableOpacity style={styles.menuButton} onPress={onPress} activeOpacity={0.75}>
       <View style={styles.menuButtonLeft}>
         <View style={styles.menuIconContainer}>{icon}</View>
         <Text style={styles.menuTitle}>{title}</Text>
       </View>
-      {showArrow && <Ionicons name="chevron-forward" size={20} color="#999" />}
+      {showArrow && <Ionicons name="chevron-forward" size={18} color="#8b8fa1" />}
     </TouchableOpacity>
   );
+
+  type ContactItem = {
+    key: string;
+    icon: React.ReactNode;
+    text: string;
+  };
+
+  const contactItems: ContactItem[] = (
+    [
+      profile?.phone && {
+        key: 'phone',
+        icon: <Ionicons name="call" size={18} color="#34C759" style={styles.contactIcon} />,
+        text: profile.phone,
+      },
+      profile?.whatsapp && {
+        key: 'whatsapp',
+        icon: <FontAwesome5 name="whatsapp" size={18} color="#25D366" style={styles.contactIcon} />,
+        text: profile.whatsapp,
+      },
+      profile?.instagram && {
+        key: 'instagram',
+        icon: <FontAwesome5 name="instagram" size={18} color="#E4405F" style={styles.contactIcon} />,
+        text: `@${profile.instagram}`,
+      },
+    ] as (ContactItem | null)[]
+  ).filter((item): item is ContactItem => Boolean(item));
+
+  const memberSince = profile?.createdAt
+    ? new Date(profile.createdAt).toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: 'long',
+      })
+    : 'Sin fecha';
 
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#34C759" />
         <Text style={styles.loadingText}>Cargando perfil...</Text>
       </View>
     );
@@ -140,133 +211,156 @@ export default function ProfileScreen({ navigation }: any) {
   return (
     <ScrollView
       style={styles.container}
+      contentContainerStyle={styles.scrollContent}
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          tintColor="#34C759"
+          colors={["#34C759"]}
+        />
       }
     >
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Mi Perfil</Text>
-      </View>
+      <LinearGradient
+        colors={['#34C759', '#30B350']}
+        style={styles.headerGradient}
+      >
+        <View style={styles.headerContent}>
+          <View style={styles.headerTextGroup}>
+            <Text style={styles.greeting}>Hola, {displayName}</Text>
+            <Text style={styles.headerSubtitleText}>Gestiona tu experiencia en Marketplace</Text>
+          </View>
+          <View style={styles.accountBadge}>
+            <MaterialIcons
+              name={user?.userType === 'SELLER' ? 'storefront' : 'person'}
+              size={18}
+              color="#FFFFFF"
+            />
+            <Text style={styles.accountBadgeText}>{accountLabel}</Text>
+          </View>
+        </View>
+      </LinearGradient>
 
-      {/* Profile Info */}
-      <View style={styles.profileSection}>
-        <View style={styles.avatarContainer}>
-          <Image
-            source={{ uri: profile?.avatar || 'https://via.placeholder.com/100' }}
-            style={styles.avatar}
-          />
-          <TouchableOpacity style={styles.editAvatarButton}>
-            <Ionicons name="camera" size={20} color="#FFFFFF" />
+      <View style={styles.content}>
+        <View style={styles.profileCard}>
+          <View style={styles.avatarSection}>
+            <Image
+              source={{ uri: profile?.avatar || 'https://via.placeholder.com/160' }}
+              style={styles.avatar}
+            />
+            <TouchableOpacity style={styles.editAvatarButton} onPress={handleEditProfile}>
+              <Ionicons name="camera" size={18} color="#0a0a0f" />
+            </TouchableOpacity>
+          </View>
+          <Text style={styles.profileName}>{displayName}</Text>
+          <Text style={styles.profileUsername}>@{profile?.username}</Text>
+          {profile?.companyName && (
+            <View style={styles.companyChip}>
+              <MaterialIcons name="business" size={14} color="#34C759" />
+              <Text style={styles.companyChipText}>{profile.companyName}</Text>
+            </View>
+          )}
+          <View style={styles.profileMetaRow}>
+            <Ionicons name="calendar-outline" size={14} color="#8b8fa1" />
+            <Text style={styles.profileMetaText}>
+              Miembro desde {memberSince}
+            </Text>
+          </View>
+          {profile?.bio && <Text style={styles.bio}>{profile.bio}</Text>}
+          <TouchableOpacity style={styles.editButton} onPress={handleEditProfile} activeOpacity={0.8}>
+            <Ionicons name="create-outline" size={18} color="#0a0a0f" />
+            <Text style={styles.editButtonText}>Editar perfil</Text>
           </TouchableOpacity>
         </View>
 
-        <View style={styles.profileInfo}>
-          <Text style={styles.userName}>
-            {profile?.firstName} {profile?.lastName}
-          </Text>
-          <Text style={styles.username}>@{profile?.username}</Text>
-          {profile?.companyName && (
-            <Text style={styles.companyName}>{profile.companyName}</Text>
-          )}
-          {profile?.bio && (
-            <Text style={styles.bio}>{profile.bio}</Text>
-          )}
-        </View>
+        {statCards.length > 0 && (
+          <View style={styles.statsSection}>
+            <Text style={styles.sectionTitle}>Resumen</Text>
+            <View style={styles.statsGrid}>
+              {statCards.map((card) => (
+                <View key={card.key} style={styles.statCard}>
+                  <View style={styles.statIconWrapper}>{card.icon}</View>
+                  <Text style={styles.statValue}>{card.value}</Text>
+                  <Text style={styles.statTitle}>{card.title}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
 
-        <TouchableOpacity style={styles.editButton} onPress={handleEditProfile}>
-          <Text style={styles.editButtonText}>Editar Perfil</Text>
-        </TouchableOpacity>
-      </View>
+        {user?.userType === 'SELLER' && (
+          <View style={styles.quickActionsSection}>
+            <Text style={styles.sectionTitle}>Acciones rápidas</Text>
+            <View style={styles.quickActionsGrid}>
+              <TouchableOpacity
+                style={styles.quickActionCard}
+                onPress={() => navigation.getParent()?.navigate('SellerOrders')}
+                activeOpacity={0.85}
+              >
+                <MaterialIcons name="assignment" size={22} color="#34C759" />
+                <Text style={styles.quickActionText}>Mis órdenes</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.quickActionCard}
+                onPress={() => navigation.getParent()?.navigate('SellerProducts')}
+                activeOpacity={0.85}
+              >
+                <MaterialIcons name="inventory" size={22} color="#34C759" />
+                <Text style={styles.quickActionText}>Mis productos</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.quickActionCard}
+                onPress={handleNotifications}
+                activeOpacity={0.85}
+              >
+                <Ionicons name="notifications" size={22} color="#34C759" />
+                <Text style={styles.quickActionText}>Notificaciones</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
 
-      
+        {contactItems.length > 0 && (
+          <View style={styles.cardSection}>
+            <Text style={styles.sectionTitle}>Información de contacto</Text>
+            <View style={styles.cardPanel}>
+              {contactItems.map((item, index) => (
+                <View
+                  key={item.key}
+                  style={[
+                    styles.contactItem,
+                    index === contactItems.length - 1 && styles.contactItemLast,
+                  ]}
+                >
+                  {item.icon}
+                  <Text style={styles.contactText}>{item.text}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
 
-      {/* Quick Actions for Sellers */}
-      {user?.userType === 'SELLER' && (
-        <View style={styles.quickActionsSection}>
-          <Text style={styles.sectionTitle}>Acciones Rápidas</Text>
-          <View style={styles.quickActionsContainer}>
-            <TouchableOpacity 
-              style={styles.quickActionButton}
-              onPress={() => navigation.getParent()?.navigate('SellerOrders')}
-            >
-              <MaterialIcons name="assignment" size={24} color="#34C759" />
-              <Text style={styles.quickActionText}>Mis Órdenes</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={styles.quickActionButton}
-              onPress={() => navigation.getParent()?.navigate('SellerProducts')}
-            >
-              <MaterialIcons name="inventory" size={24} color="#34C759" />
-              <Text style={styles.quickActionText}>Mis Productos</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={styles.quickActionButton}
-              onPress={handleNotifications}
-            >
-              <Ionicons name="notifications" size={24} color="#34C759" />
-              <Text style={styles.quickActionText}>Notificaciones</Text>
-            </TouchableOpacity>
+        <View style={styles.cardSection}>
+          <Text style={styles.sectionTitle}>Configuración</Text>
+          <View style={styles.cardPanel}>
+            {renderMenuButton('Notificaciones', <Ionicons name="notifications" size={22} color="#34C759" />, handleNotifications)}
+            {renderMenuButton('Prueba notificaciones', <Ionicons name="flask" size={22} color="#34C759" />, () => navigation.navigate('TestNotifications'))}
+            {renderMenuButton('Configuración', <Ionicons name="settings" size={22} color="#34C759" />, handleSettings)}
+            {renderMenuButton('Ayuda y soporte', <Ionicons name="help-circle" size={22} color="#34C759" />, () => Alert.alert('Ayuda', 'Soporte próximamente'))}
+            {renderMenuButton('Acerca de', <Ionicons name="information-circle" size={22} color="#34C759" />, () => Alert.alert('Acerca de', 'Marketplace v1.0'))}
           </View>
         </View>
-      )}
 
-      {/* Contact Info */}
-      {(profile?.phone || profile?.whatsapp || profile?.instagram) && (
-        <View style={styles.contactSection}>
-          <Text style={styles.sectionTitle}>Información de Contacto</Text>
-          <View style={styles.contactContainer}>
-            {profile?.phone && (
-              <View style={styles.contactItem}>
-                <Ionicons name="call" size={20} color="#34C759" style={styles.contactIcon} />
-                <Text style={styles.contactText}>{profile.phone}</Text>
-              </View>
-            )}
-            {profile?.whatsapp && (
-              <View style={styles.contactItem}>
-                <FontAwesome5 name="whatsapp" size={20} color="#25D366" style={styles.contactIcon} />
-                <Text style={styles.contactText}>{profile.whatsapp}</Text>
-              </View>
-            )}
-            {profile?.instagram && (
-              <View style={styles.contactItem}>
-                <FontAwesome5 name="instagram" size={20} color="#E4405F" style={styles.contactIcon} />
-                <Text style={styles.contactText}>@{profile.instagram}</Text>
-              </View>
-            )}
-          </View>
+        <View style={styles.logoutSection}>
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.85}>
+            <Ionicons name="log-out-outline" size={20} color="#FF6B6B" />
+            <Text style={styles.logoutButtonText}>Cerrar sesión</Text>
+          </TouchableOpacity>
         </View>
-      )}
 
-      {/* Menu Options */}
-      <View style={styles.menuSection}>
-        <Text style={styles.sectionTitle}>Configuración</Text>
-        <View style={styles.menuContainer}>
-          {renderMenuButton('Notificaciones', <Ionicons name="notifications" size={24} color="#34C759" />, handleNotifications)}
-          {renderMenuButton('Prueba Notificaciones', <Ionicons name="flask" size={24} color="#34C759" />, () => navigation.navigate('TestNotifications'))}
-          {renderMenuButton('Configuración', <Ionicons name="settings" size={24} color="#34C759" />, handleSettings)}
-          {renderMenuButton('Ayuda y Soporte', <Ionicons name="help-circle" size={24} color="#34C759" />, () => Alert.alert('Ayuda', 'Soporte próximamente'))}
-          {renderMenuButton('Acerca de', <Ionicons name="information-circle" size={24} color="#34C759" />, () => Alert.alert('Acerca de', 'Marketplace v1.0'))}
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>Marketplace • {accountLabel}</Text>
         </View>
-      </View>
-
-      {/* Logout Button */}
-      <View style={styles.logoutSection}>
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <Text style={styles.logoutButtonText}>Cerrar Sesión</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Footer */}
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>
-          Miembro desde {new Date(profile?.createdAt || '').toLocaleDateString('es-ES', {
-            year: 'numeric',
-            month: 'long'
-          })}
-        </Text>
       </View>
     </ScrollView>
   );
@@ -275,265 +369,310 @@ export default function ProfileScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#0a0a0f',
+  },
+  scrollContent: {
+    paddingBottom: 40,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#0a0a0f',
   },
   loadingText: {
-    fontSize: 16,
-    color: '#666',
+    fontSize: 15,
+    color: '#8b8fa1',
+    marginTop: 12,
   },
-  header: {
-    backgroundColor: '#007AFF',
-    padding: 20,
-    paddingTop: 50,
+  headerGradient: {
+    paddingTop: 64,
+    paddingBottom: 24,
+    paddingHorizontal: 20,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
   },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  profileSection: {
-    backgroundColor: '#fff',
-    margin: 16,
-    borderRadius: 12,
-    padding: 20,
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
-  avatarContainer: {
+  headerTextGroup: {
+    flex: 1,
+    marginRight: 16,
+  },
+  greeting: {
+    color: '#FFFFFF',
+    fontSize: 24,
+    fontWeight: '700',
+  },
+  headerSubtitleText: {
+    color: 'rgba(255,255,255,0.85)',
+    fontSize: 14,
+    marginTop: 8,
+  },
+  accountBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    gap: 6,
+  },
+  accountBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  content: {
+    paddingHorizontal: 20,
+    paddingTop: 24,
+  },
+  profileCard: {
+    backgroundColor: '#151527',
+    borderRadius: 24,
+    padding: 24,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    marginBottom: 24,
+  },
+  avatarSection: {
     position: 'relative',
     marginBottom: 16,
   },
   avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
     borderWidth: 4,
-    borderColor: '#007AFF',
+    borderColor: '#34C759',
   },
   editAvatarButton: {
     position: 'absolute',
     bottom: 0,
     right: 0,
-    backgroundColor: '#007AFF',
-    borderRadius: 20,
-    width: 40,
-    height: 40,
+    backgroundColor: '#34C759',
+    borderRadius: 16,
+    width: 36,
+    height: 36,
+    alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#0a0a0f',
+  },
+  profileName: {
+    color: '#FFFFFF',
+    fontSize: 22,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  profileUsername: {
+    color: '#8b8fa1',
+    fontSize: 14,
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  companyChip: {
+    flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 3,
-    borderColor: '#fff',
+    gap: 6,
+    backgroundColor: 'rgba(52,199,89,0.15)',
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginTop: 12,
   },
-  editAvatarText: {
-    fontSize: 16,
-  },
-  profileInfo: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  userName: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 4,
-  },
-  username: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 8,
-  },
-  companyName: {
-    fontSize: 16,
-    color: '#007AFF',
+  companyChipText: {
+    color: '#34C759',
+    fontSize: 13,
     fontWeight: '600',
-    marginBottom: 8,
+  },
+  profileMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 12,
+  },
+  profileMetaText: {
+    color: '#8b8fa1',
+    fontSize: 13,
   },
   bio: {
     fontSize: 14,
-    color: '#666',
+    color: '#cfd2dc',
     textAlign: 'center',
     lineHeight: 20,
+    marginTop: 16,
   },
   editButton: {
-    backgroundColor: '#007AFF',
+    marginTop: 20,
+    backgroundColor: '#34C759',
     paddingHorizontal: 24,
     paddingVertical: 12,
-    borderRadius: 8,
+    borderRadius: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
   },
   editButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    color: '#0a0a0f',
+    fontSize: 14,
+    fontWeight: '700',
   },
   statsSection: {
-    margin: 16,
-    marginTop: 0,
+    marginBottom: 24,
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: '700',
+    color: '#FFFFFF',
     marginBottom: 16,
   },
-  statsContainer: {
+  statsGrid: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: 12,
   },
   statCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    flex: 1,
-    marginHorizontal: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    flexBasis: '48%',
+    backgroundColor: '#151527',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    paddingVertical: 18,
+    paddingHorizontal: 16,
+    gap: 12,
   },
-  statIcon: {
-    fontSize: 24,
-    marginBottom: 8,
+  statIconWrapper: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(52,199,89,0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   statValue: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 4,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   statTitle: {
     fontSize: 12,
-    color: '#666',
-    textAlign: 'center',
+    color: '#8b8fa1',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
   quickActionsSection: {
-    margin: 16,
-    marginTop: 0,
+    marginBottom: 24,
   },
-  quickActionsContainer: {
+  quickActionsGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
     justifyContent: 'space-between',
   },
-  quickActionButton: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
+  quickActionCard: {
+    flexBasis: '30%',
+    flexGrow: 1,
+    minWidth: 110,
     alignItems: 'center',
-    flex: 1,
-    marginHorizontal: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    gap: 8,
+    justifyContent: 'center',
+    backgroundColor: '#151527',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    paddingVertical: 18,
+    paddingHorizontal: 12,
+    gap: 10,
   },
   quickActionText: {
     fontSize: 12,
-    color: '#333',
+    color: '#FFFFFF',
     textAlign: 'center',
     fontWeight: '600',
   },
-  contactSection: {
-    margin: 16,
-    marginTop: 0,
+  cardSection: {
+    marginBottom: 24,
   },
-  contactContainer: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+  cardPanel: {
+    backgroundColor: '#151527',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 12,
   },
   contactItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    paddingVertical: 12,
+    gap: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.06)',
+  },
+  contactItemLast: {
+    borderBottomWidth: 0,
   },
   contactIcon: {
-    marginRight: 12,
+    width: 24,
   },
   contactText: {
-    fontSize: 16,
-    color: '#333',
+    fontSize: 15,
+    color: '#FFFFFF',
     flex: 1,
-  },
-  menuSection: {
-    margin: 16,
-    marginTop: 0,
-  },
-  menuContainer: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
   menuButton: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
+    paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: 'rgba(255,255,255,0.06)',
   },
   menuButtonLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
+    gap: 12,
   },
   menuIconContainer: {
-    marginRight: 12,
-    width: 24,
+    width: 28,
     alignItems: 'center',
   },
   menuTitle: {
-    fontSize: 16,
-    color: '#333',
+    fontSize: 15,
+    color: '#FFFFFF',
     flex: 1,
   },
   logoutSection: {
-    margin: 16,
-    marginTop: 0,
+    marginBottom: 24,
   },
   logoutButton: {
-    backgroundColor: '#FF3B30',
+    backgroundColor: 'rgba(255,59,48,0.12)',
+    borderRadius: 16,
     paddingVertical: 16,
-    borderRadius: 12,
+    flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    justifyContent: 'center',
+    gap: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255,59,48,0.3)',
   },
   logoutButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    color: '#FF6B6B',
+    fontSize: 15,
+    fontWeight: '700',
   },
   footer: {
     alignItems: 'center',
-    padding: 20,
-    marginBottom: 20,
+    paddingVertical: 24,
   },
   footerText: {
-    fontSize: 14,
-    color: '#999',
+    fontSize: 12,
+    color: '#5c637d',
   },
 });
