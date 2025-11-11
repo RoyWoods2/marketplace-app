@@ -38,17 +38,18 @@ if (!fs.existsSync(apiTsPath)) {
 
 let content = fs.readFileSync(apiTsPath, 'utf8');
 
-// Reemplazar la URL hardcodeada
-const oldUrlPattern = /export const API_BASE_URL = ['"][^'"]*['"]/;
-const newLine = `export const API_BASE_URL = '${API_URL}';`;
+// Reemplazar la URL de producción
+// Buscar: const PRODUCTION_URL = 'https://tu-url.railway.app';
+const productionUrlPattern = /const PRODUCTION_URL = ['"][^'"]*['"]/;
+const newProductionUrl = `const PRODUCTION_URL = '${API_URL}';`;
 
-if (oldUrlPattern.test(content)) {
-  content = content.replace(oldUrlPattern, newLine);
+if (productionUrlPattern.test(content)) {
+  content = content.replace(productionUrlPattern, newProductionUrl);
   fs.writeFileSync(apiTsPath, content, 'utf8');
-  console.log(`✅ URL actualizada exitosamente a: ${API_URL}`);
+  console.log(`✅ URL de producción actualizada exitosamente a: ${API_URL}`);
 } else {
-  console.error('❌ Error: No se encontró el patrón de URL en api.ts');
-  console.log('El archivo debería contener: export const API_BASE_URL = ...');
+  console.error('❌ Error: No se encontró PRODUCTION_URL en api.ts');
+  console.log('El archivo debería contener: const PRODUCTION_URL = ...');
   process.exit(1);
 }
 

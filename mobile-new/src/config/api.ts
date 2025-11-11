@@ -1,15 +1,22 @@
 // API Configuration
-// Para desarrollo local, usa: http://TU_IP_LOCAL:3001
+// Para desarrollo local, usa: http://TU_IP_LOCAL:3000
 // Para producción, usa: https://tu-url.railway.app
-// Cambia esta URL cuando deployes a producción
+// 
+// Para cambiar rápidamente: ejecuta: node scripts/update-api-url.js https://tu-url.railway.app
 
 // Detectar si estamos en desarrollo o producción
 const isDevelopment = __DEV__;
 
-// URL por defecto (desarrollo local)
-const DEVELOPMENT_URL = 'http://192.168.1.120:3000';
+// URL por defecto para desarrollo local
+// ⚠️ Cambia esta IP por la IP de tu computadora en la red local
+// En Windows: ipconfig -> busca "IPv4 Address"
+// En Mac/Linux: ifconfig o ip addr
+// Ejecuta: node scripts/get-local-ip.js para encontrar tu IP actual
+const DEVELOPMENT_URL = 'http://192.168.3.197:3000';
 
-// URL de producción (actualizar después de deployar)
+// URL de producción (Railway)
+// ⚠️ ACTUALIZAR ESTA URL con tu URL de Railway después de deployar
+// Puedes obtenerla en Railway -> Settings -> Networking -> Generate Domain
 const PRODUCTION_URL = 'https://tu-url.railway.app'; // ⚠️ ACTUALIZAR ESTA URL
 
 // Usar URL según el entorno
