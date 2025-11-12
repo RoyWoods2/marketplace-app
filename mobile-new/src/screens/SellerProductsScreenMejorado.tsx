@@ -585,7 +585,8 @@ export default function SellerProductsScreen() {
                 colors={['rgba(255,255,255,0.3)', 'rgba(255,255,255,0.2)']}
                 style={styles.addButtonGradient}
               >
-                <Text style={styles.addButtonText}>+ Agregar</Text>
+                <MaterialIcons name="add" size={24} color="#FFFFFF" />
+                {/*<Text style={styles.addButtonText}>+ Agregar</Text>*/}
               </LinearGradient>
             </TouchableOpacity>
           </View>
@@ -620,12 +621,12 @@ export default function SellerProductsScreen() {
 
       {/* Filters */}
       <View style={styles.filtersContainer}>
-        <View style={styles.filtersScroll}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filtersScroll}>
           <FilterButton type="all" label="Todos" icon={<MaterialIcons name="list" size={18} color="currentColor" />} count={products.length} />
           <FilterButton type="active" label="Activos" icon={<Ionicons name="checkmark-circle" size={18} color="currentColor" />} count={activeCount} />
           <FilterButton type="inactive" label="Pausados" icon={<Ionicons name="pause-circle" size={18} color="currentColor" />} count={inactiveCount} />
           <FilterButton type="lowStock" label="Stock Bajo" icon={<Ionicons name="warning" size={18} color="currentColor" />} count={lowStockCount} />
-        </View>
+        </ScrollView>
       </View>
     </>
   );
@@ -1111,6 +1112,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   headerGradient: {
+    marginHorizontal: -16,
     paddingTop: 64,
     paddingBottom: 24,
     paddingHorizontal: 20,
@@ -1141,11 +1143,14 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   addButtonGradient: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
+    padding: 8,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 40,
+    minHeight: 40,
   },
   addButtonText: {
     color: '#fff',
@@ -1153,15 +1158,16 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   filtersContainer: {
+    marginHorizontal: -16,
     backgroundColor: '#0a0a0f',
     paddingVertical: 16,
+    paddingHorizontal: 20,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255,255,255,0.1)',
     marginTop: 0,
   },
   filtersScroll: {
     flexDirection: 'row',
-    paddingHorizontal: 16,
     gap: 8,
   },
   filterButton: {
@@ -1223,7 +1229,8 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   listContent: {
-    padding: 16,
+    paddingTop: 0,
+    paddingHorizontal: 16,
     paddingBottom: 40,
   },
   productCard: {
@@ -1534,8 +1541,10 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   searchContainer: {
+    marginHorizontal: -16,
     flexDirection: 'row',
-    padding: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
     backgroundColor: '#0a0a0f',
     gap: 8,
     borderBottomWidth: 1,

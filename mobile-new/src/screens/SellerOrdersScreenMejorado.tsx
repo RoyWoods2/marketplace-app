@@ -508,7 +508,7 @@ export default function SellerOrdersScreen({ navigation }: any) {
           style={styles.sortButton}
           onPress={() => setShowSortModal(true)}
         >
-          <Ionicons name="swap-vertical" size={24} color="#888" />
+          <Ionicons name="swap-vertical" size={20} color="#FFFFFF" style={styles.sortButtonIcon} />
           <Text style={styles.sortButtonText}>{getSortLabel()}</Text>
         </TouchableOpacity>
       </View>
@@ -561,82 +561,126 @@ export default function SellerOrdersScreen({ navigation }: any) {
 
       <Modal
         visible={showStatsModal}
-        transparent
-        animationType="fade"
+        animationType="slide"
+        transparent={true}
         onRequestClose={() => setShowStatsModal(false)}
       >
-        <View style={styles.statsOverlay}>
-          <View style={styles.statsModal}>
-            <LinearGradient colors={['#34C759', '#30B350'] as const} style={styles.statsHeader}>
-              <View style={styles.statsHeaderContent}>
-                <Ionicons name="stats-chart" size={20} color="#FFFFFF" />
-                <Text style={styles.statsTitle}>Resumen de ventas</Text>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <LinearGradient
+              colors={['#34C759', '#30B350']}
+              style={styles.modalHeader}
+            >
+              <View style={styles.modalTitleRow}>
+                <Ionicons name="stats-chart" size={22} color="#FFFFFF" />
+                <Text style={styles.modalTitle}>Resumen de ventas</Text>
               </View>
-              <TouchableOpacity style={styles.statsCloseButton} onPress={() => setShowStatsModal(false)}>
-                <Ionicons name="close" size={18} color="#FFFFFF" />
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => setShowStatsModal(false)}
+              >
+                <Ionicons name="close" size={20} color="#FFFFFF" />
               </TouchableOpacity>
             </LinearGradient>
 
-            <View style={styles.statsBody}>
-              <View style={styles.statsGrid}>
-                <View style={styles.statsCard}>
-                  <View style={[styles.statsIconWrapper, { backgroundColor: 'rgba(52,199,89,0.15)' }]}
-                  >
-                    <Ionicons name="bag-handle" size={20} color="#34C759" />
-                  </View>
-                  <Text style={styles.statsCardValue}>{stats.totalOrders}</Text>
-                  <Text style={styles.statsCardLabel}>Órdenes totales</Text>
+            <ScrollView style={styles.modalBody}>
+              <Card style={styles.statCard}>
+                <View style={styles.statCardHeader}>
+                  <Ionicons name="bag-handle" size={20} color="#34C759" />
+                  <Text style={styles.statCardTitle}>Órdenes Totales</Text>
                 </View>
-                <View style={styles.statsCard}>
-                  <View style={[styles.statsIconWrapper, { backgroundColor: 'rgba(255,214,10,0.15)' }]}
-                  >
-                    <Ionicons name="cash-outline" size={20} color="#FFD60A" />
-                  </View>
-                  <Text style={styles.statsCardValue}>{formatCurrencyShort(stats.totalRevenue)}</Text>
-                  <Text style={styles.statsCardLabel}>Ingresos totales</Text>
-                </View>
-                <View style={styles.statsCard}>
-                  <View style={[styles.statsIconWrapper, { backgroundColor: 'rgba(255,159,10,0.15)' }]}
-                  >
-                    <Ionicons name="timer-outline" size={20} color="#FF9F0A" />
-                  </View>
-                  <Text style={styles.statsCardValue}>{stats.totalPending}</Text>
-                  <Text style={styles.statsCardLabel}>Pendientes</Text>
-                </View>
-                <View style={styles.statsCard}>
-                  <View style={[styles.statsIconWrapper, { backgroundColor: 'rgba(52,199,89,0.15)' }]}
-                  >
-                    <Ionicons name="trending-up-outline" size={20} color="#34C759" />
-                  </View>
-                  <Text style={styles.statsCardValue}>{stats.todayCompleted}</Text>
-                  <Text style={styles.statsCardLabel}>Completadas hoy</Text>
-                </View>
-              </View>
+                <Text style={styles.statCardValue}>{stats.totalOrders}</Text>
+                <Text style={styles.statCardSubtext}>Total de órdenes recibidas</Text>
+              </Card>
 
-              <View style={styles.statsTodayBlock}>
-                <Text style={styles.statsTodayTitle}>Hoy</Text>
-                <View style={styles.statsTodayRow}>
-                  <View style={styles.statsTodayLabelRow}>
-                    <Ionicons name="cash-outline" size={16} color="#FFD60A" />
-                    <Text style={styles.statsTodayLabel}>Ingresos</Text>
-                  </View>
-                  <Text style={styles.statsTodayValue}>{formatCurrencyShort(stats.todayRevenue)}</Text>
+              <Card style={styles.statCard}>
+                <View style={styles.statCardHeader}>
+                  <Ionicons name="cash-outline" size={20} color="#FFD60A" />
+                  <Text style={styles.statCardTitle}>Ingresos Totales</Text>
                 </View>
-                <View style={styles.statsTodayRow}>
-                  <View style={styles.statsTodayLabelRow}>
-                    <Ionicons name="timer-outline" size={16} color="#FF9F0A" />
-                    <Text style={styles.statsTodayLabel}>Pendientes</Text>
-                  </View>
-                  <Text style={styles.statsTodayValue}>{stats.todayPending}</Text>
+                <Text style={styles.statCardValue}>{formatCurrencyShort(stats.totalRevenue)}</Text>
+                <Text style={styles.statCardSubtext}>Total de órdenes entregadas</Text>
+              </Card>
+
+              <Card style={styles.statCard}>
+                <View style={styles.statCardHeader}>
+                  <Ionicons name="timer-outline" size={20} color="#FF9F0A" />
+                  <Text style={styles.statCardTitle}>Pendientes</Text>
                 </View>
-                <View style={styles.statsTodayRow}>
-                  <View style={styles.statsTodayLabelRow}>
-                    <Ionicons name="trending-up-outline" size={16} color="#34C759" />
-                    <Text style={styles.statsTodayLabel}>Completadas</Text>
-                  </View>
-                  <Text style={styles.statsTodayValue}>{stats.todayCompleted}</Text>
+                <View style={styles.statRow}>
+                  <Text style={styles.statLabel}>Total:</Text>
+                  <Text style={styles.statValue}>{stats.totalPending}</Text>
                 </View>
+                <View style={styles.statRow}>
+                  <Text style={styles.statLabel}>Hoy:</Text>
+                  <Text style={[styles.statValue, { color: '#FF9F0A' }]}>{stats.todayPending}</Text>
+                </View>
+              </Card>
+
+              <Card style={styles.statCard}>
+                <View style={styles.statCardHeader}>
+                  <Ionicons name="trending-up-outline" size={20} color="#34C759" />
+                  <Text style={styles.statCardTitle}>Hoy</Text>
+                </View>
+                <View style={styles.statRow}>
+                  <Text style={styles.statLabel}>Ingresos:</Text>
+                  <Text style={[styles.statValue, { color: '#FFD60A' }]}>{formatCurrencyShort(stats.todayRevenue)}</Text>
+                </View>
+                <View style={styles.statRow}>
+                  <Text style={styles.statLabel}>Completadas:</Text>
+                  <Text style={[styles.statValue, { color: '#34C759' }]}>{stats.todayCompleted}</Text>
+                </View>
+              </Card>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Sort Modal */}
+      <Modal
+        visible={showSortModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowSortModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <LinearGradient
+              colors={['#667eea', '#764ba2']}
+              style={styles.modalHeader}
+            >
+              <View style={styles.modalTitleRow}>
+                <Ionicons name="swap-vertical" size={22} color="#FFFFFF" />
+                <Text style={styles.modalTitle}>Ordenar Por</Text>
               </View>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => setShowSortModal(false)}
+              >
+                <Ionicons name="close" size={20} color="#FFFFFF" />
+              </TouchableOpacity>
+            </LinearGradient>
+
+            <View style={styles.modalBody}>
+              {(['date_new', 'date_old', 'total_high', 'total_low', 'status'] as SortType[]).map((sort) => (
+                <TouchableOpacity
+                  key={sort}
+                  style={[styles.sortOption, sortBy === sort && styles.sortOptionActive]}
+                  onPress={() => {
+                    setSortBy(sort);
+                    setShowSortModal(false);
+                  }}
+                >
+                  <Text style={[styles.sortOptionText, sortBy === sort && styles.sortOptionTextActive]}>
+                    {sort === 'date_new' ? 'Más Recientes' :
+                     sort === 'date_old' ? 'Más Antiguas' :
+                     sort === 'total_high' ? 'Mayor Monto' :
+                     sort === 'total_low' ? 'Menor Monto' :
+                     'Por Estado'}
+                  </Text>
+                  {sortBy === sort && <Text style={styles.sortOptionCheck}>✓</Text>}
+                </TouchableOpacity>
+              ))}
             </View>
           </View>
         </View>
@@ -662,6 +706,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   headerGradient: {
+    marginHorizontal: -16,
     paddingTop: 64,
     paddingBottom: 24,
     paddingHorizontal: 20,
@@ -681,14 +726,15 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   filtersContainer: {
+    marginHorizontal: -16,
     backgroundColor: '#0a0a0f',
     paddingVertical: 16,
+    paddingHorizontal: 20,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255,255,255,0.1)',
     marginTop: 0,
   },
   filtersScroll: {
-    paddingHorizontal: 16,
     gap: 8,
   },
   filterButton: {
@@ -756,7 +802,8 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   listContent: {
-    padding: 16,
+    paddingTop: 0,
+    paddingHorizontal: 16,
     paddingBottom: 40,
   },
   orderCard: {
@@ -957,8 +1004,13 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
   },
+  modalTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
   modalTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#fff',
   },
@@ -1195,8 +1247,10 @@ const styles = StyleSheet.create({
     fontSize: 20,
   },
   searchContainer: {
+    marginHorizontal: -16,
     flexDirection: 'row',
-    padding: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
     backgroundColor: '#0a0a0f',
     gap: 8,
     borderBottomWidth: 1,
@@ -1236,7 +1290,6 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(102, 126, 234, 0.3)',
   },
   sortButtonIcon: {
-    fontSize: 16,
     marginRight: 6,
   },
   sortButtonText: {
@@ -1282,11 +1335,26 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     padding: 20,
   },
+  statCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 12,
+  },
   statCardTitle: {
     fontSize: 16,
     fontWeight: 'bold',
     color: '#fff',
-    marginBottom: 12,
+  },
+  statCardValue: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#34C759',
+    marginBottom: 4,
+  },
+  statCardSubtext: {
+    fontSize: 12,
+    color: '#888',
   },
   statRow: {
     flexDirection: 'row',
