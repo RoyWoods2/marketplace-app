@@ -7,6 +7,8 @@ import {
   Image,
   Dimensions,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { formatCurrencyShort } from '../utils/currency';
 
 const CARD_WIDTH = (Dimensions.get('window').width - 48) / 2; // 2 columns with padding
@@ -31,66 +33,94 @@ interface ProductCardModernProps {
 
 export default function ProductCardModern({ product, onPress, style }: ProductCardModernProps) {
   const mainImage = product.images && product.images.length > 0 ? product.images[0] : null;
-  
+  const sellerName = product.user
+    ? product.user.companyName || `${product.user.firstName ?? ''} ${product.user.lastName ?? ''}`.trim()
+    : undefined;
+
+  const isLowStock = product.stock !== undefined && product.stock > 0 && product.stock <= 5;
+  const isOutOfStock = product.stock === 0;
+
   return (
     <TouchableOpacity
       style={[styles.card, style]}
       onPress={onPress}
-      activeOpacity={0.8}
+      activeOpacity={0.9}
     >
-      {/* Product Image */}
       <View style={styles.imageContainer}>
         <Image
-          source={{ uri: mainImage || 'https://via.placeholder.com/200' }}
+          source={{ uri: mainImage || 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=600' }}
           style={styles.image}
-          resizeMode="cover"
         />
-        {product.stock !== undefined && product.stock <= 5 && product.stock > 0 && (
-          <View style={styles.stockBadge}>
-            <Text style={styles.stockBadgeText}>Últimas {product.stock}</Text>
+
+        <LinearGradient
+          colors={['transparent', 'rgba(4,6,14,0.85)']}
+          style={styles.imageOverlay}
+        />
+
+        {product.category && (
+          <View style={styles.categoryChip}>
+            <Text style={styles.categoryChipText}>{product.category}</Text>
           </View>
         )}
-        {product.stock === 0 && (
+
+        {!isOutOfStock && (
+          <View style={styles.pricePill}>
+            <Text style={styles.pricePillText}>{formatCurrencyShort(product.price)}</Text>
+          </View>
+        )}
+
+        {isLowStock && (
+          <View style={styles.stockBadge}>
+            <Ionicons name="alert-circle" size={14} color="#FFD60A" />
+            <Text style={styles.stockBadgeText}>Quedan {product.stock}</Text>
+          </View>
+        )}
+
+        {isOutOfStock && (
           <View style={styles.outOfStockBadge}>
             <Text style={styles.outOfStockText}>Agotado</Text>
           </View>
         )}
       </View>
 
-      {/* Product Info */}
       <View style={styles.infoContainer}>
         <Text style={styles.title} numberOfLines={2}>
           {product.title}
         </Text>
-        
-        {/* Seller Info */}
-        {product.user && (
-          <Text style={styles.seller} numberOfLines={1}>
-            {product.user.companyName || `${product.user.firstName} ${product.user.lastName}`}
-          </Text>
-        )}
 
-        {/* Price */}
-        <View style={styles.priceContainer}>
-          <Text style={styles.price}>{formatCurrencyShort(product.price)}</Text>
-        </View>
-
-        {/* Category Badge */}
-        {product.category && (
-          <View style={styles.categoryBadge}>
-            <Text style={styles.categoryText}>{product.category}</Text>
+        {sellerName && (
+          <View style={styles.row}>
+            <Text style={styles.label}>Vendedor</Text>
+            <Text style={styles.value} numberOfLines={1}>{sellerName}</Text>
           </View>
         )}
 
-        {/* Quick Action Button */}
+        <View style={styles.row}>
+          <Text style={styles.label}>Tipo</Text>
+          <Text style={styles.value} numberOfLines={1}>{product.category ?? 'Sin categoría'}</Text>
+        </View>
+
+        <View style={styles.row}>
+          <Text style={styles.label}>Valor</Text>
+          <Text style={styles.valuePrimary}>{formatCurrencyShort(product.price)}</Text>
+        </View>
+
+        <View style={styles.row}>
+          <Text style={styles.label}>Stock</Text>
+          <Text style={[styles.value, isOutOfStock ? styles.valueDanger : isLowStock ? styles.valueWarning : undefined]}>
+            {product.stock === undefined ? 'Consultar' : isOutOfStock ? 'Agotado' : `${product.stock} unidades`}
+          </Text>
+        </View>
+
         <TouchableOpacity
-          style={styles.buyButton}
+          style={styles.ctaButton}
           onPress={(e) => {
             e.stopPropagation();
             onPress();
           }}
         >
-          <Text style={styles.buyButtonText}>Ver detalles</Text>
+          <Text style={styles.ctaText}>Ver detalles</Text>
+          <Ionicons name="chevron-forward" size={16} color="#0b1b11" />
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
@@ -99,45 +129,88 @@ export default function ProductCardModern({ product, onPress, style }: ProductCa
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#151527',
-    borderRadius: 16,
-    marginBottom: 16,
+    backgroundColor: '#121326',
+    borderRadius: 20,
+    marginBottom: 18,
     width: CARD_WIDTH,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 4,
+    borderColor: 'rgba(255,255,255,0.04)',
     overflow: 'hidden',
+    shadowColor: '#04060e',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 14,
+    elevation: 6,
   },
   imageContainer: {
     width: '100%',
-    height: CARD_WIDTH * 0.9,
-    backgroundColor: '#1f1f2f',
+    height: CARD_WIDTH * 1.05,
+    backgroundColor: '#111325',
     position: 'relative',
+    overflow: 'hidden',
   },
   image: {
     width: '100%',
     height: '100%',
   },
+  imageOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: '55%',
+  },
+  categoryChip: {
+    position: 'absolute',
+    top: 12,
+    left: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: 'rgba(4,6,14,0.65)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  categoryChipText: {
+    color: '#E9FCEF',
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: 0.3,
+  },
+  pricePill: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    backgroundColor: '#34C759',
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 999,
+    shadowColor: '#34C759',
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 6,
+  },
+  pricePillText: {
+    color: '#04100a',
+    fontSize: 13,
+    fontWeight: '700',
+  },
   stockBadge: {
     position: 'absolute',
-    top: 8,
-    right: 8,
-    backgroundColor: '#FF6B35',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
+    bottom: 16,
+    left: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(255,214,10,0.16)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
   },
   stockBadgeText: {
-    color: '#FFFFFF',
-    fontSize: 10,
-    fontWeight: 'bold',
+    color: '#FFD60A',
+    fontSize: 12,
+    fontWeight: '600',
   },
   outOfStockBadge: {
     position: 'absolute',
@@ -155,54 +228,62 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   infoContainer: {
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    gap: 10,
   },
   title: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '700',
     color: '#FFFFFF',
-    marginBottom: 6,
     lineHeight: 20,
     minHeight: 40,
   },
-  seller: {
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  label: {
+    color: '#7c819a',
     fontSize: 12,
-    color: '#8b8fa1',
-    marginBottom: 10,
-  },
-  priceContainer: {
-    marginBottom: 8,
-  },
-  price: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#34C759',
-  },
-  categoryBadge: {
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(52,199,89,0.15)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-    marginBottom: 10,
-  },
-  categoryText: {
-    fontSize: 11,
-    color: '#34C759',
     fontWeight: '600',
+    letterSpacing: 0.2,
   },
-  buyButton: {
+  value: {
+    color: '#e1e3f0',
+    fontSize: 13,
+    fontWeight: '500',
+    flex: 1,
+    textAlign: 'right',
+  },
+  valuePrimary: {
+    color: '#34C759',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  valueWarning: {
+    color: '#FFD60A',
+  },
+  valueDanger: {
+    color: '#FF453A',
+  },
+  ctaButton: {
+    marginTop: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
     backgroundColor: '#34C759',
     borderRadius: 14,
     paddingVertical: 10,
-    paddingHorizontal: 16,
-    alignItems: 'center',
-    marginTop: 8,
   },
-  buyButtonText: {
-    color: '#0a0a0f',
-    fontSize: 12,
+  ctaText: {
+    color: '#0b1b11',
+    fontSize: 13,
     fontWeight: '700',
+    letterSpacing: 0.3,
   },
 });
 
