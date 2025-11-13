@@ -12,7 +12,7 @@ const isDevelopment = __DEV__;
 // En Windows: ipconfig -> busca "IPv4 Address"
 // En Mac/Linux: ifconfig o ip addr
 // Ejecuta: node scripts/get-local-ip.js para encontrar tu IP actual
-const DEVELOPMENT_URL = 'http://192.168.1.120:3000';
+const DEVELOPMENT_URL = 'http://192.168.3.197:3000';
 
 // URL de producción (Railway)
 // ⚠️ ACTUALIZAR ESTA URL con tu URL de Railway después de deployar

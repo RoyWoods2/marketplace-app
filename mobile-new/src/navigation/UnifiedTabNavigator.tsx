@@ -128,7 +128,7 @@ function BuyerHomeStack() {
       <Stack.Screen 
         name="ProductDetail" 
         component={ProductDetailScreen}
-        options={{ title: 'Detalles del Producto' }}
+        options={{ headerShown: false }}
       />
       <Stack.Screen 
         name="CreateOrder" 
@@ -151,7 +151,7 @@ function BuyerSearchStack() {
       <Stack.Screen 
         name="ProductDetail" 
         component={ProductDetailScreen}
-        options={{ title: 'Detalles del Producto' }}
+        options={{ headerShown: false }}
       />
       <Stack.Screen 
         name="CreateOrder" 
@@ -179,7 +179,7 @@ function BuyerOrdersStack() {
       <Stack.Screen 
         name="ProductDetail" 
         component={ProductDetailScreen}
-        options={{ title: 'Detalles del Producto' }}
+        options={{ headerShown: false }}
       />
     </Stack.Navigator>
   );

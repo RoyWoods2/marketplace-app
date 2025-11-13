@@ -10,9 +10,12 @@ import {
   Linking,
   ActivityIndicator,
   Dimensions,
+  Platform,
+  StatusBar,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { formatCurrencyShort } from '../utils/currency';
 import { API_ENDPOINTS } from '../config/api';
@@ -55,6 +58,7 @@ export default function ProductDetailScreen({ route, navigation }: any) {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const { token } = useAuth();
+  const insets = useSafeAreaInsets();
   const screenWidth = Dimensions.get('window').width;
 
   useEffect(() => {
@@ -158,10 +162,10 @@ export default function ProductDetailScreen({ route, navigation }: any) {
           colors={['#34C759', '#2AA94B', '#070810']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={styles.heroGradient}
+          style={[styles.heroGradient, { top: insets.top }]}
         />
 
-        <View style={styles.heroHeader}>
+        <View style={[styles.heroHeader, { paddingTop: insets.top + 16 }]}>
           <TouchableOpacity onPress={() => navigation.goBack()} activeOpacity={0.85} style={styles.backButton}>
             <Ionicons name="chevron-back" size={22} color="#0a1a10" />
           </TouchableOpacity>
@@ -338,6 +342,7 @@ const styles = StyleSheet.create({
   },
   heroSection: {
     position: 'relative',
+    paddingTop: 0,
     paddingBottom: 24,
   },
   heroGradient: {

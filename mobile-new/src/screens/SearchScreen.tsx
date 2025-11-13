@@ -554,18 +554,21 @@ export default function SearchScreen() {
         end={{ x: 1, y: 1 }}
         style={styles.heroHeader}
       >
-        <View style={styles.heroBadge}>
-          <Ionicons name="planet-outline" size={18} color="rgba(12,45,21,0.9)" />
-          <Text style={styles.heroBadgeText}>Marketplace vivo</Text>
+        <View style={styles.heroContent}>
+          <View style={styles.heroBadge}>
+            <Ionicons name="planet-outline" size={18} color="rgba(12,45,21,0.9)" />
+            <Text style={styles.heroBadgeText}>Marketplace vivo</Text>
+          </View>
+          <Text style={styles.heroTitle}>Buscar productos</Text>
+          {/*<Text style={styles.heroSubtitle}>
+            {resultsLabel} listados activos. Descubre novedades y conecta con vendedores confiables.
+          </Text>*/}
         </View>
-        <Text style={styles.heroTitle}>Buscar productos</Text>
-        <Text style={styles.heroSubtitle}>
-          {resultsLabel} listados activos. Descubre novedades y conecta con vendedores confiables.
-        </Text>
       </LinearGradient>
 
       <View style={styles.listHeader}>
-        <Card style={styles.searchCard}>
+        <View style={styles.listHeaderContent}>
+          <Card style={styles.searchCard}>
           <View style={styles.searchRow}>
             <Ionicons name="search-outline" size={20} color="rgba(255,255,255,0.75)" style={styles.searchIcon} />
             <TextInput
@@ -707,6 +710,7 @@ export default function SearchScreen() {
             </View>
           </>
         )}
+        </View>
       </View>
     </>
   );
@@ -726,7 +730,7 @@ export default function SearchScreen() {
           sections={groupedProducts}
           keyExtractor={(item, index) => item.map((product) => product.id).join('-') || `row-${index}`}
           renderSectionHeader={({ section }) => (
-            <View style={styles.sectionHeader}>
+            <View style={styles.sectionListHeader}>
               <Text style={styles.sectionHeaderText}>{section.title}</Text>
             </View>
           )}
@@ -894,11 +898,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#070810',
   },
   heroHeader: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 0,
     paddingTop: 52,
     paddingBottom: 36,
     borderBottomLeftRadius: 26,
     borderBottomRightRadius: 26,
+    marginHorizontal: -8,
+  },
+  heroContent: {
+    paddingHorizontal: 24,
   },
   heroBadge: {
     flexDirection: 'row',
@@ -930,10 +938,14 @@ const styles = StyleSheet.create({
     maxWidth: 320,
   },
   listHeader: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 0,
     paddingBottom: 12,
     paddingTop: 24,
     marginTop: -18,
+    marginHorizontal: -8,
+  },
+  listHeaderContent: {
+    paddingHorizontal: 12,
   },
   searchCard: {
     padding: 18,
@@ -1272,7 +1284,7 @@ const styles = StyleSheet.create({
     paddingBottom: 120,
     paddingHorizontal: 8,
   },
-  sectionHeader: {
+  sectionListHeader: {
     paddingHorizontal: 14,
     paddingTop: 20,
     paddingBottom: 6,

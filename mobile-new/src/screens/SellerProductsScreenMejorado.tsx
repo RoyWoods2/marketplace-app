@@ -614,8 +614,7 @@ export default function SellerProductsScreen() {
           style={styles.sortButton}
           onPress={() => setShowSortModal(true)}
         >
-          <Ionicons name="swap-vertical" size={20} color="#FFFFFF" style={styles.sortButtonIcon} />
-          <Text style={styles.sortButtonText}>{getSortLabel()}</Text>
+          <Ionicons name="swap-vertical" size={20} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
 
@@ -1568,22 +1567,14 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   sortButton: {
-    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: 'rgba(102, 126, 234, 0.2)',
     borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    width: 44,
+    height: 44,
     borderWidth: 1,
     borderColor: 'rgba(102, 126, 234, 0.3)',
-  },
-  sortButtonIcon: {
-    marginRight: 6,
-  },
-  sortButtonText: {
-    color: '#fff',
-    fontSize: 13,
-    fontWeight: '500',
   },
   productStats: {
     flexDirection: 'row',

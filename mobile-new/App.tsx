@@ -131,7 +131,7 @@ function HomeStack() {
       <Stack.Screen 
         name="ProductDetail" 
         component={ProductDetailScreen}
-        options={{ title: 'Detalles del Producto' }}
+        options={{ headerShown: false }}
       />
     </Stack.Navigator>
   );
@@ -262,7 +262,7 @@ function AppNavigator() {
                 <Stack.Screen 
                   name="ProductDetail" 
                   component={ProductDetailScreen}
-                  options={{ title: 'Detalles del Producto' }}
+                  options={{ headerShown: false }}
                 />
                 <Stack.Screen 
                   name="Notifications" 
