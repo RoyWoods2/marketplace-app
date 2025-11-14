@@ -1,0 +1,43 @@
+services:
+  # Web Service (Backend API)
+  - type: web
+    name: marketplace-backend
+    env: node
+    plan: free  # Cambiar a 'starter' para producción ($7/mes)
+    region: oregon  # oregon, frankfurt, singapore, etc.
+    buildCommand: npm install && npx prisma generate
+    startCommand: npx prisma migrate deploy && npm start
+    envVars:
+      # Base de Datos - Se configurará automáticamente si se crea con render.yaml
+      # DATABASE_URL: ${db.DATABASE_URL}
+      # DIRECT_DATABASE_URL: ${db.DATABASE_URL}
+      
+      # JWT
+      - key: JWT_SECRET
+        sync: false  # Se debe configurar manualmente
+      
+      # Cloudinary
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      
+      # Servidor
+      - key: PORT
+        value: 3000
+      - key: NODE_ENV
+        value: production
+      
+      # CORS - Se actualizará después del deploy
+      - key: CORS_ORIGIN
+        value: https://marketplace-backend.onrender.com
+
+databases:
+  # PostgreSQL Database
+  - name: marketplace-db
+    plan: free  # Cambiar a 'starter' para producción ($7/mes)
+    databaseName: marketplace
+    user: marketplace_user
+

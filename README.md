@@ -128,6 +128,41 @@ El proyecto usa PostgreSQL con Prisma ORM. Las migraciones están en `backend/pr
 - **Reel**: Videos promocionales
 - **Notification**: Sistema de notificaciones
 
+## 🚀 Deploy y Hosting
+
+Para deployar la aplicación fuera de la red local (testing/producción), consulta las siguientes guías:
+
+### Guías de Deploy Disponibles:
+
+- **[⚡ Deploy Rápido (Render)](./QUICK_DEPLOY.md)** - Deploy en 10 minutos con Render (Plan Free)
+- **[🟢 Render](./DEPLOY_RENDER.md)** - Guía completa para Render (Recomendado para empezar)
+- **[🔵 Fly.io](./DEPLOY_FLYIO.md)** - Deploy con Docker en Fly.io
+- **[🟠 DigitalOcean](./DEPLOY_DIGITALOCEAN.md)** - Deploy en DigitalOcean App Platform
+- **[🟡 VPS](./DEPLOY_VPS.md)** - Deploy en VPS (Self-hosted)
+- **[📊 Comparación de Plataformas](./DEPLOY_COMPARISON.md)** - Comparación detallada de todas las opciones
+- **[🌐 Guía General de Hosting](./HOSTING_OPTIONS.md)** - Resumen de todas las opciones
+
+### Inicio Rápido:
+
+**Para testing inmediato**, usa Render (Plan Free):
+1. Crea cuenta en [Render.com](https://render.com)
+2. Crea PostgreSQL database
+3. Crea Web Service desde GitHub
+4. Configura variables de entorno
+5. Deploy automático
+6. Actualiza URL en el móvil
+
+Ver [QUICK_DEPLOY.md](./QUICK_DEPLOY.md) para instrucciones paso a paso.
+
+### Requisitos para Deploy:
+
+- PostgreSQL database (incluida en las guías)
+- Variables de entorno configuradas (ver `backend/env.example`)
+- Cloudinary configurado (para imágenes)
+- URL del backend actualizada en el móvil
+
+Ver [HOSTING_OPTIONS.md](./HOSTING_OPTIONS.md) para más detalles.
+
 ## 🤝 Contribución
 
 1. Fork el proyecto
