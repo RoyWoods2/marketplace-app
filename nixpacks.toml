@@ -1,0 +1,9 @@
+[phases.setup]
+nixPkgs = ["nodejs-18_x", "npm"]
+
+[phases.install]
+cmds = ["cd backend && npm install && npx prisma generate"]
+
+[start]
+cmd = "cd backend && npx prisma migrate deploy && npm start"
+
