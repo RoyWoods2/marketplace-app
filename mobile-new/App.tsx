@@ -28,6 +28,9 @@ import { AuthProvider, useAuth } from './src/context/AuthContext';
 // Import push notifications hook
 import usePushNotifications from './src/hooks/usePushNotifications';
 
+// Import API config para inicializar
+import { updateAPIBaseURL, getAPIBaseURLSync } from './src/config/api';
+
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 
@@ -290,6 +293,48 @@ function AppNavigator() {
 }
 
 export default function App() {
+  const [apiInitialized, setApiInitialized] = React.useState(false);
+
+  useEffect(() => {
+    // Inicializar la configuración del API al iniciar la app
+    const initializeAPI = async () => {
+      try {
+        // Importar dinámicamente para asegurar que se inicialice
+        const { initializeAPIBaseURL } = await import('./src/config/api');
+        await initializeAPIBaseURL();
+        
+        // Esperar un poco para que se complete la actualización
+        await new Promise(resolve => setTimeout(resolve, 300));
+        const currentURL = getAPIBaseURLSync();
+        console.log('');
+        console.log('🌐 ========================================');
+        console.log('🌐 API URL Configurada:', currentURL);
+        console.log('🌐 ========================================');
+        console.log('');
+        setApiInitialized(true);
+      } catch (error) {
+        console.error('❌ Error inicializando API:', error);
+        const currentURL = getAPIBaseURLSync();
+        console.log('⚠️ Usando URL por defecto:', currentURL);
+        setApiInitialized(true); // Continuar de todas formas
+      }
+    };
+
+    initializeAPI();
+  }, []);
+
+  if (!apiInitialized) {
+    return (
+      <SafeAreaProvider>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#667eea" />
+          <Text style={styles.loadingText}>Configurando conexión...</Text>
+        </View>
+        <StatusBar style="light" />
+      </SafeAreaProvider>
+    );
+  }
+
   return (
     <SafeAreaProvider>
       <AuthProvider>
