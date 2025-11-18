@@ -18,10 +18,12 @@ import {
   Keyboard,
   TouchableWithoutFeedback,
   ScrollView,
+  PanResponder,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import { useFocusEffect } from '@react-navigation/native';
 import { API_ENDPOINTS } from '../config/api';
 import { useAuth } from '../context/AuthContext';
 import Card from '../components/Card';
@@ -80,6 +82,259 @@ export default function SellerProductsScreen() {
   const { token, user } = useAuth();
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  
+  // Swipe transition animations
+  // Right-to-left: Orders
+  const swipeTranslateX = useRef(new Animated.Value(0)).current;
+  const overlayTranslateX = useRef(new Animated.Value(SCREEN_WIDTH)).current;
+  const overlayOpacity = useRef(new Animated.Value(0)).current;
+  
+  // Left-to-right: Dashboard
+  const dashboardOverlayTranslateX = useRef(new Animated.Value(-SCREEN_WIDTH)).current;
+  const dashboardOverlayOpacity = useRef(new Animated.Value(0)).current;
+  
+  const isSwiping = useRef(false);
+  const [showOverlay, setShowOverlay] = useState(false);
+  const [showDashboardOverlay, setShowDashboardOverlay] = useState(false);
+  const swipeDirection = useRef<'left' | 'right' | null>(null);
+
+  // PanResponder for swipe gesture (right-to-left to Orders)
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (evt, gestureState) => {
+        // Only respond to horizontal swipes (dx > dy) with minimum threshold
+        return Math.abs(gestureState.dx) > Math.abs(gestureState.dy) && Math.abs(gestureState.dx) > 15;
+      },
+      onPanResponderGrant: () => {
+        isSwiping.current = true;
+        swipeDirection.current = null;
+      },
+      onPanResponderMove: (evt, gestureState) => {
+        // Determine swipe direction
+        if (Math.abs(gestureState.dx) > Math.abs(gestureState.dy)) {
+          if (gestureState.dx < 0 && !swipeDirection.current) {
+            // Right-to-left swipe (to Orders)
+            swipeDirection.current = 'left';
+            setShowOverlay(true);
+            setShowDashboardOverlay(false);
+          } else if (gestureState.dx > 0 && !swipeDirection.current) {
+            // Left-to-right swipe (to Dashboard)
+            swipeDirection.current = 'right';
+            setShowDashboardOverlay(true);
+            setShowOverlay(false);
+          }
+        }
+        
+        // Handle right-to-left swipe (to Orders)
+        if (gestureState.dx < 0 && Math.abs(gestureState.dx) > Math.abs(gestureState.dy) && swipeDirection.current === 'left') {
+          // Clamp the translation to screen width
+          const translateX = Math.max(gestureState.dx, -SCREEN_WIDTH);
+          swipeTranslateX.setValue(translateX);
+          
+          // Move overlay from right (SCREEN_WIDTH) to left (0) as user swipes
+          const overlayX = SCREEN_WIDTH + translateX; // Starts at SCREEN_WIDTH, moves to 0
+          overlayTranslateX.setValue(Math.max(0, overlayX));
+          
+          // Calculate opacity based on swipe progress (0 to 1)
+          const progress = Math.min(Math.abs(gestureState.dx) / SCREEN_WIDTH, 1);
+          overlayOpacity.setValue(progress * 0.5); // Max 50% opacity for preview
+        }
+        
+        // Handle left-to-right swipe (to Dashboard)
+        if (gestureState.dx > 0 && Math.abs(gestureState.dx) > Math.abs(gestureState.dy) && swipeDirection.current === 'right') {
+          // Clamp the translation to screen width
+          const translateX = Math.min(gestureState.dx, SCREEN_WIDTH);
+          swipeTranslateX.setValue(translateX);
+          
+          // Move overlay from left (-SCREEN_WIDTH) to right (0) as user swipes
+          const overlayX = -SCREEN_WIDTH + translateX; // Starts at -SCREEN_WIDTH, moves to 0
+          dashboardOverlayTranslateX.setValue(Math.min(0, overlayX));
+          
+          // Calculate opacity based on swipe progress (0 to 1)
+          const progress = Math.min(Math.abs(gestureState.dx) / SCREEN_WIDTH, 1);
+          dashboardOverlayOpacity.setValue(progress * 0.5); // Max 50% opacity for preview
+        }
+      },
+      onPanResponderTerminationRequest: () => true,
+      onPanResponderRelease: (evt, gestureState) => {
+        isSwiping.current = false;
+        const swipeDistance = Math.abs(gestureState.dx);
+        const swipeThreshold = SCREEN_WIDTH * 0.3; // 30% of screen width
+        const direction = swipeDirection.current;
+        swipeDirection.current = null;
+        
+        // Handle right-to-left swipe (to Orders)
+        if (gestureState.dx < -50 && Math.abs(gestureState.dx) > Math.abs(gestureState.dy) && direction === 'left') {
+          if (swipeDistance > swipeThreshold) {
+            // Complete the swipe - animate to full screen and navigate
+            Animated.parallel([
+              Animated.timing(swipeTranslateX, {
+                toValue: -SCREEN_WIDTH,
+                duration: 250,
+                useNativeDriver: true,
+              }),
+              Animated.timing(overlayTranslateX, {
+                toValue: 0,
+                duration: 250,
+                useNativeDriver: true,
+              }),
+              Animated.timing(overlayOpacity, {
+                toValue: 1,
+                duration: 250,
+                useNativeDriver: true,
+              }),
+            ]).start(() => {
+              // Navigate to Orders tab after animation completes
+              const parent = navigation.getParent();
+              if (parent) {
+                parent.navigate('SellerOrders');
+              } else {
+                // Fallback navigation
+                (navigation as any).navigate('Orders');
+              }
+            });
+          } else {
+            // Snap back - user didn't swipe far enough
+            Animated.parallel([
+              Animated.spring(swipeTranslateX, {
+                toValue: 0,
+                tension: 50,
+                friction: 8,
+                useNativeDriver: true,
+              }),
+              Animated.spring(overlayTranslateX, {
+                toValue: SCREEN_WIDTH,
+                tension: 50,
+                friction: 8,
+                useNativeDriver: true,
+              }),
+              Animated.timing(overlayOpacity, {
+                toValue: 0,
+                duration: 200,
+                useNativeDriver: true,
+              }),
+            ]).start(() => {
+              setShowOverlay(false);
+            });
+          }
+        }
+        // Handle left-to-right swipe (to Dashboard)
+        else if (gestureState.dx > 50 && Math.abs(gestureState.dx) > Math.abs(gestureState.dy) && direction === 'right') {
+          if (swipeDistance > swipeThreshold) {
+            // Complete the swipe - animate to full screen and navigate
+            Animated.parallel([
+              Animated.timing(swipeTranslateX, {
+                toValue: SCREEN_WIDTH,
+                duration: 250,
+                useNativeDriver: true,
+              }),
+              Animated.timing(dashboardOverlayTranslateX, {
+                toValue: 0,
+                duration: 250,
+                useNativeDriver: true,
+              }),
+              Animated.timing(dashboardOverlayOpacity, {
+                toValue: 1,
+                duration: 250,
+                useNativeDriver: true,
+              }),
+            ]).start(() => {
+              // Navigate to Dashboard tab after animation completes
+              const parent = navigation.getParent();
+              if (parent) {
+                parent.navigate('SellerDashboard');
+              } else {
+                // Fallback navigation
+                (navigation as any).navigate('Dashboard');
+              }
+            });
+          } else {
+            // Snap back - user didn't swipe far enough
+            Animated.parallel([
+              Animated.spring(swipeTranslateX, {
+                toValue: 0,
+                tension: 50,
+                friction: 8,
+                useNativeDriver: true,
+              }),
+              Animated.spring(dashboardOverlayTranslateX, {
+                toValue: -SCREEN_WIDTH,
+                tension: 50,
+                friction: 8,
+                useNativeDriver: true,
+              }),
+              Animated.timing(dashboardOverlayOpacity, {
+                toValue: 0,
+                duration: 200,
+                useNativeDriver: true,
+              }),
+            ]).start(() => {
+              setShowDashboardOverlay(false);
+            });
+          }
+        } else {
+          // Reset if not a valid swipe
+          Animated.parallel([
+            Animated.spring(swipeTranslateX, {
+              toValue: 0,
+              tension: 50,
+              friction: 8,
+              useNativeDriver: true,
+            }),
+            Animated.spring(overlayTranslateX, {
+              toValue: SCREEN_WIDTH,
+              tension: 50,
+              friction: 8,
+              useNativeDriver: true,
+            }),
+            Animated.timing(overlayOpacity, {
+              toValue: 0,
+              duration: 200,
+              useNativeDriver: true,
+            }),
+            Animated.spring(dashboardOverlayTranslateX, {
+              toValue: -SCREEN_WIDTH,
+              tension: 50,
+              friction: 8,
+              useNativeDriver: true,
+            }),
+            Animated.timing(dashboardOverlayOpacity, {
+              toValue: 0,
+              duration: 200,
+              useNativeDriver: true,
+            }),
+          ]).start(() => {
+            setShowOverlay(false);
+            setShowDashboardOverlay(false);
+          });
+        }
+      },
+    })
+  ).current;
+
+  // Reset animation values when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      // Reset all swipe animation values to initial state
+      swipeTranslateX.setValue(0);
+      overlayTranslateX.setValue(SCREEN_WIDTH);
+      overlayOpacity.setValue(0);
+      dashboardOverlayTranslateX.setValue(-SCREEN_WIDTH);
+      dashboardOverlayOpacity.setValue(0);
+      isSwiping.current = false;
+      swipeDirection.current = null;
+      setShowOverlay(false);
+      setShowDashboardOverlay(false);
+      
+      // Stop any ongoing animations
+      swipeTranslateX.stopAnimation();
+      overlayTranslateX.stopAnimation();
+      overlayOpacity.stopAnimation();
+      dashboardOverlayTranslateX.stopAnimation();
+      dashboardOverlayOpacity.stopAnimation();
+    }, [swipeTranslateX, overlayTranslateX, overlayOpacity, dashboardOverlayTranslateX, dashboardOverlayOpacity])
+  );
 
   const [newProduct, setNewProduct] = useState({
     title: '',
@@ -631,9 +886,17 @@ export default function SellerProductsScreen() {
   );
 
   return (
-    <View style={styles.container}>
-      {/* Products List */}
-      <FlatList
+    <View style={styles.container} {...panResponder.panHandlers}>
+      <Animated.View
+        style={[
+          styles.listContainer,
+          {
+            transform: [{ translateX: swipeTranslateX }],
+          },
+        ]}
+      >
+        {/* Products List */}
+        <FlatList
         data={filteredProducts}
         renderItem={renderProduct}
         keyExtractor={(item) => item.id}
@@ -660,6 +923,63 @@ export default function SellerProductsScreen() {
           </View>
         }
       />
+      </Animated.View>
+      
+      {/* Swipe Preview Overlay - Right to Left (Orders) */}
+      {showOverlay ? (
+        <Animated.View
+          style={[
+            styles.swipeOverlay,
+            {
+              opacity: overlayOpacity,
+              transform: [{ translateX: overlayTranslateX }],
+            },
+          ]}
+          pointerEvents="none"
+        >
+          <View style={styles.swipePreview}>
+            <LinearGradient
+              colors={['#34C759', '#30B350']}
+              style={styles.swipePreviewHeader}
+            >
+              <MaterialIcons name="shopping-cart" size={24} color="#FFFFFF" />
+              <Text style={styles.swipePreviewText}>Órdenes</Text>
+            </LinearGradient>
+            <View style={styles.swipePreviewContent}>
+              <Ionicons name="arrow-back" size={32} color="rgba(255, 255, 255, 0.3)" />
+              <Text style={styles.swipePreviewHint}>Desliza para ver órdenes</Text>
+            </View>
+          </View>
+        </Animated.View>
+      ) : null}
+      
+      {/* Swipe Preview Overlay - Left to Right (Dashboard) */}
+      {showDashboardOverlay ? (
+        <Animated.View
+          style={[
+            styles.swipeOverlay,
+            {
+              opacity: dashboardOverlayOpacity,
+              transform: [{ translateX: dashboardOverlayTranslateX }],
+            },
+          ]}
+          pointerEvents="none"
+        >
+          <View style={styles.swipePreview}>
+            <LinearGradient
+              colors={['#34C759', '#30B350']}
+              style={styles.swipePreviewHeader}
+            >
+              <Ionicons name="stats-chart" size={24} color="#FFFFFF" />
+              <Text style={styles.swipePreviewText}>Dashboard</Text>
+            </LinearGradient>
+            <View style={styles.swipePreviewContent}>
+              <Ionicons name="arrow-forward" size={32} color="rgba(255, 255, 255, 0.3)" />
+              <Text style={styles.swipePreviewHint}>Desliza para ver dashboard</Text>
+            </View>
+          </View>
+        </Animated.View>
+      ) : null}
 
       {/* Add/Edit Modal */}
       <Modal
@@ -1098,6 +1418,49 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#0a0a0f',
+    overflow: 'hidden',
+  },
+  listContainer: {
+    flex: 1,
+  },
+  swipeOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#0a0a0f',
+    zIndex: 1000,
+  },
+  swipePreview: {
+    flex: 1,
+    backgroundColor: '#1a1a2e',
+  },
+  swipePreviewHeader: {
+    paddingTop: 64,
+    paddingBottom: 24,
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+  },
+  swipePreviewText: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  swipePreviewContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 16,
+  },
+  swipePreviewHint: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.5)',
+    textAlign: 'center',
   },
   loadingContainer: {
     flex: 1,

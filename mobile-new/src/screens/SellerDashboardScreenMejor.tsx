@@ -11,9 +11,11 @@ import {
   ActivityIndicator,
   Dimensions,
   Animated,
+  PanResponder,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { API_ENDPOINTS } from '../config/api';
 import { useAuth } from '../context/AuthContext';
 import Card from '../components/Card';
@@ -66,6 +68,152 @@ export default function SellerDashboardScreen({ navigation }: any) {
   // Animaciones
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
+  
+  // Swipe transition animations
+  const swipeTranslateX = useRef(new Animated.Value(0)).current;
+  const overlayTranslateX = useRef(new Animated.Value(SCREEN_WIDTH)).current;
+  const overlayOpacity = useRef(new Animated.Value(0)).current;
+  const isSwiping = useRef(false);
+  const [showOverlay, setShowOverlay] = useState(false);
+
+  // PanResponder for swipe gesture with animation
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (evt, gestureState) => {
+        // Only respond to horizontal swipes (dx > dy) with minimum threshold
+        // This prevents interference with vertical scrolling
+        return Math.abs(gestureState.dx) > Math.abs(gestureState.dy) && Math.abs(gestureState.dx) > 15;
+      },
+      onPanResponderGrant: () => {
+        isSwiping.current = true;
+        setShowOverlay(true);
+      },
+      onPanResponderMove: (evt, gestureState) => {
+        // Only animate for right-to-left swipes (negative dx)
+        if (gestureState.dx < 0 && Math.abs(gestureState.dx) > Math.abs(gestureState.dy)) {
+          // Clamp the translation to screen width
+          const translateX = Math.max(gestureState.dx, -SCREEN_WIDTH);
+          swipeTranslateX.setValue(translateX);
+          
+          // Move overlay from right (SCREEN_WIDTH) to left (0) as user swipes
+          const overlayX = SCREEN_WIDTH + translateX; // Starts at SCREEN_WIDTH, moves to 0
+          overlayTranslateX.setValue(Math.max(0, overlayX));
+          
+          // Calculate opacity based on swipe progress (0 to 1)
+          const progress = Math.min(Math.abs(gestureState.dx) / SCREEN_WIDTH, 1);
+          overlayOpacity.setValue(progress * 0.5); // Max 50% opacity for preview
+        }
+      },
+      onPanResponderTerminationRequest: () => true,
+      onPanResponderRelease: (evt, gestureState) => {
+        isSwiping.current = false;
+        const swipeDistance = Math.abs(gestureState.dx);
+        const swipeThreshold = SCREEN_WIDTH * 0.3; // 30% of screen width
+        
+        // Swipe from right to left (negative dx) with minimum distance
+        if (gestureState.dx < -50 && Math.abs(gestureState.dx) > Math.abs(gestureState.dy)) {
+          if (swipeDistance > swipeThreshold) {
+            // Complete the swipe - animate to full screen and navigate
+            Animated.parallel([
+              Animated.timing(swipeTranslateX, {
+                toValue: -SCREEN_WIDTH,
+                duration: 250,
+                useNativeDriver: true,
+              }),
+              Animated.timing(overlayTranslateX, {
+                toValue: 0,
+                duration: 250,
+                useNativeDriver: true,
+              }),
+              Animated.timing(overlayOpacity, {
+                toValue: 1,
+                duration: 250,
+                useNativeDriver: true,
+              }),
+            ]).start(() => {
+              // Navigate to Products tab after animation completes
+              // Keep overlay at full opacity to cover screen during navigation transition
+              const parent = navigation.getParent();
+              if (parent) {
+                parent.navigate('SellerProducts');
+              } else {
+                navigation.navigate('Products');
+              }
+              // Don't reset animations or hide overlay here - let it stay visible
+              // The overlay at opacity 1 will fully cover the dashboard screen
+              // This prevents the dashboard from flashing during navigation transition
+              // Cleanup will happen via useFocusEffect when returning to this screen
+              // or when the screen unmounts naturally
+            });
+          } else {
+            // Snap back - user didn't swipe far enough
+            Animated.parallel([
+              Animated.spring(swipeTranslateX, {
+                toValue: 0,
+                tension: 50,
+                friction: 8,
+                useNativeDriver: true,
+              }),
+              Animated.spring(overlayTranslateX, {
+                toValue: SCREEN_WIDTH,
+                tension: 50,
+                friction: 8,
+                useNativeDriver: true,
+              }),
+              Animated.timing(overlayOpacity, {
+                toValue: 0,
+                duration: 200,
+                useNativeDriver: true,
+              }),
+            ]).start(() => {
+              setShowOverlay(false);
+            });
+          }
+        } else {
+          // Reset if not a valid swipe
+          Animated.parallel([
+            Animated.spring(swipeTranslateX, {
+              toValue: 0,
+              tension: 50,
+              friction: 8,
+              useNativeDriver: true,
+            }),
+            Animated.spring(overlayTranslateX, {
+              toValue: SCREEN_WIDTH,
+              tension: 50,
+              friction: 8,
+              useNativeDriver: true,
+            }),
+            Animated.timing(overlayOpacity, {
+              toValue: 0,
+              duration: 200,
+              useNativeDriver: true,
+            }),
+          ]).start(() => {
+            setShowOverlay(false);
+          });
+        }
+      },
+    })
+  ).current;
+
+  // Reset animation values when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      // Reset all swipe animation values to initial state
+      swipeTranslateX.setValue(0);
+      overlayTranslateX.setValue(SCREEN_WIDTH);
+      overlayOpacity.setValue(0);
+      isSwiping.current = false;
+      setShowOverlay(false);
+      
+      // Stop any ongoing animations
+      swipeTranslateX.stopAnimation();
+      overlayTranslateX.stopAnimation();
+      overlayOpacity.stopAnimation();
+    }, [swipeTranslateX, overlayTranslateX, overlayOpacity])
+  );
 
   useEffect(() => {
     if (user) {
@@ -281,14 +429,23 @@ export default function SellerDashboardScreen({ navigation }: any) {
 
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.scrollContent}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#34C759" />
-      }
-      showsVerticalScrollIndicator={false}
-    >
+    <View style={styles.container} {...panResponder.panHandlers}>
+      <Animated.View
+        style={[
+          styles.scrollContainer,
+          {
+            transform: [{ translateX: swipeTranslateX }],
+          },
+        ]}
+      >
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#34C759" />
+          }
+          showsVerticalScrollIndicator={false}
+        >
       {/* Header */}
       <LinearGradient
         colors={['#34C759', '#30B350', '#2A9F47']}
@@ -458,7 +615,37 @@ export default function SellerDashboardScreen({ navigation }: any) {
             Última actualización: {new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
           </Text>
         </View>
-    </ScrollView>
+        </ScrollView>
+      </Animated.View>
+      
+      {/* Swipe Preview Overlay - Only visible during swipe */}
+      {showOverlay ? (
+        <Animated.View
+          style={[
+            styles.swipeOverlay,
+            {
+              opacity: overlayOpacity,
+              transform: [{ translateX: overlayTranslateX }],
+            },
+          ]}
+          pointerEvents="none"
+        >
+        <View style={styles.swipePreview}>
+          <LinearGradient
+            colors={['#34C759', '#30B350']}
+            style={styles.swipePreviewHeader}
+          >
+            <MaterialIcons name="inventory" size={24} color="#FFFFFF" />
+            <Text style={styles.swipePreviewText}>Productos</Text>
+          </LinearGradient>
+          <View style={styles.swipePreviewContent}>
+            <Ionicons name="arrow-back" size={32} color="rgba(255, 255, 255, 0.3)" />
+            <Text style={styles.swipePreviewHint}>Desliza para ver productos</Text>
+          </View>
+        </View>
+      </Animated.View>
+      ) : null}
+    </View>
   );
 }
 
@@ -466,9 +653,55 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#0a0a0f',
+    overflow: 'hidden',
+  },
+  scrollContainer: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
   },
   scrollContent: {
     paddingBottom: 40,
+  },
+  swipeOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#0a0a0f',
+    zIndex: 1000,
+  },
+  swipePreview: {
+    flex: 1,
+    backgroundColor: '#1a1a2e',
+  },
+  swipePreviewHeader: {
+    paddingTop: 64,
+    paddingBottom: 24,
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+  },
+  swipePreviewText: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  swipePreviewContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 16,
+  },
+  swipePreviewHint: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.5)',
+    textAlign: 'center',
   },
   loadingContainer: {
     flex: 1,
