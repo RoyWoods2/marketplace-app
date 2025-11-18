@@ -6,6 +6,56 @@ const { PrismaClient } = require('@prisma/client');
 const router = express.Router();
 const prisma = new PrismaClient();
 
+// GET /api/auth - Info endpoint
+router.get('/', (req, res) => {
+  res.json({
+    message: 'Authentication API',
+    endpoints: {
+      login: {
+        method: 'POST',
+        path: '/api/auth/login',
+        body: {
+          email: 'string (required)',
+          password: 'string (required)'
+        },
+        response: {
+          message: 'Login successful',
+          user: 'User object',
+          token: 'JWT token'
+        }
+      },
+      register: {
+        method: 'POST',
+        path: '/api/auth/register',
+        body: {
+          email: 'string (required)',
+          username: 'string (required)',
+          password: 'string (required)',
+          firstName: 'string (required)',
+          lastName: 'string (required)',
+          userType: 'CLIENT | SELLER | ADMIN (optional, defaults to CLIENT)'
+        },
+        response: {
+          message: 'User created successfully',
+          user: 'User object',
+          token: 'JWT token'
+        }
+      },
+      me: {
+        method: 'GET',
+        path: '/api/auth/me',
+        headers: {
+          Authorization: 'Bearer <token>'
+        },
+        response: {
+          user: 'Current user object'
+        }
+      }
+    },
+    note: 'Use POST method for login and register endpoints. Cannot be tested directly in browser (GET requests only). Use curl, Postman, or your mobile app.'
+  });
+});
+
 // Register
 router.post('/register', async (req, res) => {
   try {

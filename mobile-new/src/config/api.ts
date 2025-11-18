@@ -17,7 +17,7 @@ const DEVELOPMENT_URL = 'http://192.168.3.197:3000';
 // URL de producción (Railway)
 // ⚠️ ACTUALIZAR ESTA URL con tu URL de Railway después de deployar
 // Puedes obtenerla en Railway -> Settings -> Networking -> Generate Domain
-const PRODUCTION_URL = 'https://tu-url.railway.app'; // ⚠️ ACTUALIZAR ESTA URL
+const PRODUCTION_URL = 'https://marketplace-app-znsm.onrender.com'; // ⚠️ ACTUALIZAR ESTA URL
 
 // Usar URL según el entorno
 export const API_BASE_URL = isDevelopment ? DEVELOPMENT_URL : PRODUCTION_URL;
