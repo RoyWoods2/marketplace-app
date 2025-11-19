@@ -1,4 +1,4 @@
-FROM node:18-alpine
+FROM node:20-alpine
 
 WORKDIR /app
 
@@ -9,8 +9,11 @@ COPY backend/prisma ./prisma/
 # Instalar dependencias
 RUN npm ci --only=production
 
+# Instalar Prisma CLI globalmente para evitar problemas de permisos
+RUN npm install -g prisma@^5.7.1
+
 # Generar Prisma Client
-RUN npx prisma generate
+RUN prisma generate
 
 # Copiar el resto del código del backend
 COPY backend/ .
@@ -19,5 +22,5 @@ COPY backend/ .
 EXPOSE 3000
 
 # Ejecutar migraciones y empezar servidor
-CMD ["sh", "-c", "npx prisma migrate deploy && npm start"]
+CMD ["sh", "-c", "prisma migrate deploy && npm start"]
 
