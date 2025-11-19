@@ -1,5 +1,8 @@
 FROM node:20-alpine
 
+# Instalar OpenSSL que Prisma necesita para PostgreSQL
+RUN apk add --no-cache openssl1.1-compat
+
 WORKDIR /app
 
 # Copiar package.json y prisma primero (para cache de Docker)
